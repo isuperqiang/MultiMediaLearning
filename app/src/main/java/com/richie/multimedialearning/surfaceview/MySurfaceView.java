@@ -1,8 +1,8 @@
-package com.richie.multimedialearning;
+package com.richie.multimedialearning.surfaceview;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.SurfaceHolder;
@@ -10,6 +10,9 @@ import android.view.SurfaceView;
 
 import com.richie.easylog.ILogger;
 import com.richie.easylog.LoggerFactory;
+import com.richie.multimedialearning.utils.BitmapUtils;
+
+import java.io.IOException;
 
 /**
  * @author Richie on 2018.10.22
@@ -19,9 +22,9 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
     private volatile boolean mIsDrawing;
     private SurfaceHolder mSurfaceHolder;
     private Paint mPaint;
-    private int mWidth;
-    private int mHeight;
     private Canvas mCanvas;
+    private Thread mThread;
+    private Bitmap mBitmap;
 
     public MySurfaceView(Context context) {
         super(context);
@@ -43,22 +46,25 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
         mSurfaceHolder.addCallback(this);
 
         mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        mPaint.setColor(Color.RED);
-        mPaint.setStrokeWidth(8);
+        mPaint.setStyle(Paint.Style.STROKE);
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         logger.debug("onSurfaceCreated");
+        mThread = new Thread(this, "Renderer");
     }
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         logger.debug("onSurfaceChanged. format:{}, width:{}, height:{}", format, width, height);
-        mWidth = width;
-        mHeight = height;
+        try {
+            mBitmap = BitmapUtils.decodeSampledBitmapFromStream(getContext().getAssets().open("template.jpg"), width, height);
+        } catch (IOException e) {
+            logger.error(e);
+        }
         mIsDrawing = true;
-        new Thread(this).start();
+        mThread.start();
     }
 
     @Override
@@ -66,6 +72,7 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
         logger.debug("onSurfaceDestroyed");
         mIsDrawing = false;
         mSurfaceHolder.removeCallback(this);
+        mThread.interrupt();
     }
 
     @Override
@@ -88,7 +95,6 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
     }
 
     private void draw() {
-        mCanvas.drawColor(Color.WHITE);
-        mCanvas.drawCircle(mWidth / 2, mHeight / 2, 200, mPaint);
+        mCanvas.drawBitmap(mBitmap, 0, 0, mPaint);
     }
 }

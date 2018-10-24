@@ -16,7 +16,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".SurfaceActivity"></activity>
+        <activity android:name=".surfaceview.SurfaceActivity"></activity>
     </application>
 
 </manifest>

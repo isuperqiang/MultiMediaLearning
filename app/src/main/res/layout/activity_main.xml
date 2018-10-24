@@ -12,6 +12,7 @@
         android:layout_height="wrap_content"
         android:text="SurfaceView"
         app:layout_constraintLeft_toLeftOf="parent"
+        android:textAllCaps="false"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
