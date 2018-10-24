@@ -4,26 +4,37 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".audiorecord.AudioRecordActivity">
 
     <Button
-        android:id="@+id/btn_surface_view"
-        android:layout_width="match_parent"
+        android:id="@+id/btn_start_record_audio"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="SurfaceView"
+        android:layout_marginTop="100dp"
+        android:text="Start"
         android:textAllCaps="false"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
-        android:id="@+id/btn_audio_record"
-        android:layout_width="match_parent"
+        android:id="@+id/btn_pause_record_audio"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="AudioRecord"
+        android:text="Pause"
         android:textAllCaps="false"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btn_surface_view" />
+        app:layout_constraintTop_toBottomOf="@id/btn_start_record_audio" />
+
+    <Button
+        android:id="@+id/btn_stop_record_audio"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Stop"
+        android:textAllCaps="false"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_pause_record_audio" />
 
 </android.support.constraint.ConstraintLayout>
