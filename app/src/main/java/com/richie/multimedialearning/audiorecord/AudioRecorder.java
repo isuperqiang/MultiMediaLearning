@@ -67,6 +67,8 @@ public class AudioRecorder {
         // 获得缓冲区字节大小
         mBufferSizeInBytes = AudioRecord.getMinBufferSize(sampleRateInHz, channelConfig, audioFormat);
         mAudioRecord = new AudioRecord(audioSource, sampleRateInHz, channelConfig, audioFormat, mBufferSizeInBytes);
+        int state = mAudioRecord.getState();
+        Log.i(TAG, "createAudio state:" + state + ". initialized:" + (state == AudioRecord.STATE_INITIALIZED));
         mFileName = fileName;
         mStatus = Status.STATUS_READY;
     }

@@ -11,7 +11,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.List;
 
 /**
@@ -28,8 +27,7 @@ class PcmToWav {
      * @param destinationPath 目标wav文件路径
      * @return true|false
      */
-    public static boolean mergePCMFilesToWAVFile(List<String> filePathList,
-                                                 String destinationPath) {
+    public static boolean mergePCMFilesToWAVFile(List<String> filePathList, String destinationPath) {
         int fileNum = filePathList.size();
         File[] file = new File[fileNum];
         int totalSize = 0;
@@ -69,12 +67,12 @@ class PcmToWav {
         File destFile = new File(destinationPath);
         FileUtils.deleteFileRecursively(destFile);
         //合成所有的pcm文件的数据，写到目标文件
-        OutputStream ouStream = null;
+        BufferedOutputStream ouStream = null;
         try {
             ouStream = new BufferedOutputStream(new FileOutputStream(destinationPath));
             byte buffer[] = new byte[10240]; // Length of All Files, Total Size
             ouStream.write(h, 0, h.length);
-            InputStream inStream;
+            BufferedInputStream inStream;
             for (int j = 0; j < fileNum; j++) {
                 inStream = new BufferedInputStream(new FileInputStream(file[j]));
                 int size = inStream.read(buffer);
@@ -110,12 +108,11 @@ class PcmToWav {
      * @return
      */
     public static boolean makePCMFileToWAVFile(String pcmPath, String destinationPath, boolean deletePcmFile) {
-        int totalSize = 0;
         File file = new File(pcmPath);
         if (!file.exists()) {
             return false;
         }
-        totalSize = (int) file.length();
+        int totalSize = (int) file.length();
         // 填入参数，比特率等等。这里用的是16位单声道 8000 hz
         WaveHeader header = new WaveHeader();
         // 长度字段 = 内容的大小（TOTAL_SIZE) +
@@ -147,13 +144,11 @@ class PcmToWav {
         FileUtils.deleteFileRecursively(destFile);
 
         //合成所有的pcm文件的数据，写到目标文件
+        BufferedOutputStream ouStream = null;
+        InputStream inStream = null;
         try {
             byte buffer[] = new byte[1024 * 4]; // Length of All Files, Total Size
-            InputStream inStream = null;
-            OutputStream ouStream = null;
-
-            ouStream = new BufferedOutputStream(new FileOutputStream(
-                    destinationPath));
+            ouStream = new BufferedOutputStream(new FileOutputStream(destinationPath));
             ouStream.write(h, 0, h.length);
             inStream = new BufferedInputStream(new FileInputStream(file));
             int size = inStream.read(buffer);
@@ -161,11 +156,24 @@ class PcmToWav {
                 ouStream.write(buffer);
                 size = inStream.read(buffer);
             }
-            inStream.close();
-            ouStream.close();
         } catch (IOException ioe) {
             Log.e(TAG, ioe.getMessage());
             return false;
+        } finally {
+            if (inStream != null) {
+                try {
+                    inStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (ouStream != null) {
+                try {
+                    ouStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
         if (deletePcmFile) {
             FileUtils.deleteFileRecursively(file);
