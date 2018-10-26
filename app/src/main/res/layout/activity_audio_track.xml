@@ -4,36 +4,37 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".audiotrack.AudioTrackActivity">
 
     <Button
-        android:id="@+id/btn_surface_view"
-        android:layout_width="match_parent"
+        android:id="@+id/btn_start_play_audio"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="SurfaceView"
+        android:layout_marginTop="100dp"
+        android:text="Start"
         android:textAllCaps="false"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
-        android:id="@+id/btn_audio_record"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="AudioRecord"
-        android:textAllCaps="false"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btn_surface_view" />
+    <!--<Button-->
+    <!--android:id="@+id/btn_pause_play_audio"-->
+    <!--android:layout_width="wrap_content"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:text="Pause"-->
+    <!--android:textAllCaps="false"-->
+    <!--app:layout_constraintLeft_toLeftOf="parent"-->
+    <!--app:layout_constraintRight_toRightOf="parent"-->
+    <!--app:layout_constraintTop_toBottomOf="@id/btn_start_play_audio" />-->
 
     <Button
-        android:id="@+id/btn_audio_track"
-        android:layout_width="match_parent"
+        android:id="@+id/btn_stop_play_audio"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="AudioTrack"
+        android:text="Stop"
         android:textAllCaps="false"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btn_audio_record" />
+        app:layout_constraintTop_toBottomOf="@id/btn_start_play_audio" />
 
 </android.support.constraint.ConstraintLayout>

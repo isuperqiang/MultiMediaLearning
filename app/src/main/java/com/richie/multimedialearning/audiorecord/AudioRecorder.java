@@ -325,7 +325,6 @@ public class AudioRecorder {
         STATUS_STOP
     }
 
-
     public interface RecordStreamListener {
         void onRecording(byte[] bytes, int offset, int length);
 
