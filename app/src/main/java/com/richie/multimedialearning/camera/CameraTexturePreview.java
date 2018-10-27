@@ -5,9 +5,10 @@ import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.TextureView;
 
+import com.richie.easylog.ILogger;
+import com.richie.easylog.LoggerFactory;
 import com.richie.multimedialearning.utils.CameraUtils;
 
 import java.io.IOException;
@@ -16,63 +17,61 @@ import java.io.IOException;
  * @author Richie on 2018.10.27
  * 使用 TextureView 预览
  */
-public class CameraTexPreview extends TextureView implements TextureView.SurfaceTextureListener {
-    private static final String TAG = "CameraTexPreview";
+public class CameraTexturePreview extends TextureView implements TextureView.SurfaceTextureListener {
+    private final ILogger logger = LoggerFactory.getLogger(CameraTexturePreview.class);
     private Camera mCamera;
     private Activity mActivity;
 
-    public CameraTexPreview(Context context) {
+    public CameraTexturePreview(Context context) {
         super(context);
         init();
     }
 
-    public CameraTexPreview(Context context, AttributeSet attrs) {
+    public CameraTexturePreview(Context context, AttributeSet attrs) {
         super(context, attrs);
         init();
     }
 
-    public CameraTexPreview(Context context, AttributeSet attrs, int defStyleAttr) {
+    public CameraTexturePreview(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
     }
 
     private void init() {
         setSurfaceTextureListener(this);
-    }
-
-    public void setActivity(Activity activity) {
-        mActivity = activity;
+        mActivity = (Activity) getContext();
     }
 
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-        Log.d(TAG, "onSurfaceTextureAvailable. width:" + width + ", height:" + height);
+        logger.debug("onSurfaceTextureAvailable. width:{}, height:{}", width, height);
         openCamera();
         startPreviewDisplay(surface);
     }
 
     @Override
     public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
-        Log.d(TAG, "onSurfaceTextureSizeChanged. width:" + width + ", height:" + height);
+        logger.debug("onSurfaceTextureSizeChanged. width:{}, height:{}", width, height);
+        // Ignored, Camera does all the work for us
     }
 
     @Override
     public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-        Log.d(TAG, "onSurfaceTextureDestroyed");
+        logger.debug("onSurfaceTextureDestroyed");
         releaseCamera();
         return true;
     }
 
     @Override
     public void onSurfaceTextureUpdated(SurfaceTexture surface) {
-        // 绘制每帧时调用
         //Log.d(TAG, "onSurfaceTextureUpdated");
+        // Invoked every time there's a new Camera preview frame
     }
 
     private void openCamera() {
         Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
         int number = Camera.getNumberOfCameras();
-        Log.i(TAG, "camera number:" + number);
+        logger.info("camera number:{}", number);
         for (int i = 0; i < number; i++) {
             Camera.getCameraInfo(i, cameraInfo);
             if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
@@ -82,7 +81,7 @@ public class CameraTexPreview extends TextureView implements TextureView.Surface
                     Camera.Parameters params = mCamera.getParameters();
                     params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
                 } catch (Exception e) {
-                    Log.e(TAG, "openCamera: ", e);
+                    logger.error("openCamera", e);
                     mActivity.onBackPressed();
                 }
                 break;
@@ -96,7 +95,7 @@ public class CameraTexPreview extends TextureView implements TextureView.Surface
             mCamera.setPreviewTexture(surfaceTexture);
             mCamera.startPreview();
         } catch (IOException e) {
-            Log.e(TAG, "Error while START preview for camera", e);
+            logger.error("Error while START preview for camera", e);
         }
     }
 
@@ -107,7 +106,7 @@ public class CameraTexPreview extends TextureView implements TextureView.Surface
                 mCamera.setPreviewTexture(null);
                 mCamera.release();
             } catch (IOException e) {
-                Log.e(TAG, "releaseCamera: ", e);
+                logger.error("releaseCamera: ", e);
             }
             mCamera = null;
         }

@@ -4,10 +4,11 @@ import android.app.Activity;
 import android.content.Context;
 import android.hardware.Camera;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import com.richie.easylog.ILogger;
+import com.richie.easylog.LoggerFactory;
 import com.richie.multimedialearning.utils.CameraUtils;
 
 import java.io.IOException;
@@ -17,7 +18,7 @@ import java.io.IOException;
  * 使用 SurfaceView 预览
  */
 public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.Callback {
-    private static final String TAG = "CameraSurfacePreview";
+    private final ILogger logger = LoggerFactory.getLogger(CameraSurfacePreview.class);
     private SurfaceHolder mSurfaceHolder;
     private Camera mCamera;
     private Activity mActivity;
@@ -40,34 +41,31 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
     private void init() {
         mSurfaceHolder = getHolder();
         mSurfaceHolder.addCallback(this);
-    }
-
-    public void setActivity(Activity activity) {
-        mActivity = activity;
+        mActivity = (Activity) getContext();
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-        Log.d(TAG, "surfaceCreated");
+        logger.debug("surfaceCreated");
         openCamera();
         startPreviewDisplay();
     }
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-        Log.d(TAG, "surfaceChanged: format:" + format + ", width:" + width + ", height:" + height);
+        logger.debug("surfaceChanged: format:{}, width:{}, height:{}", format, width, height);
     }
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-        Log.d(TAG, "surfaceDestroyed");
+        logger.debug("surfaceDestroyed");
         releaseCamera();
     }
 
     private void openCamera() {
         Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
         int number = Camera.getNumberOfCameras();
-        Log.i(TAG, "camera number:" + number);
+        logger.info("camera number:{}", number);
         for (int i = 0; i < number; i++) {
             Camera.getCameraInfo(i, cameraInfo);
             if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
@@ -77,7 +75,7 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
                     Camera.Parameters params = mCamera.getParameters();
                     params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
                 } catch (Exception e) {
-                    Log.e(TAG, "openCamera: ", e);
+                    logger.error("openCamera: ", e);
                     mActivity.onBackPressed();
                 }
                 break;
@@ -91,7 +89,7 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
             mCamera.setPreviewDisplay(mSurfaceHolder);
             mCamera.startPreview();
         } catch (IOException e) {
-            Log.e(TAG, "Error while START preview for camera", e);
+            logger.error("Error while START preview for camera", e);
         }
     }
 
@@ -102,7 +100,7 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
                 mCamera.setPreviewDisplay(null);
                 mCamera.release();
             } catch (IOException e) {
-                Log.e(TAG, "releaseCamera: ", e);
+                logger.error("releaseCamera: ", e);
             }
             mCamera = null;
         }
