@@ -14,6 +14,7 @@ import android.view.View;
 import com.richie.multimedialearning.audiorecord.AudioRecordActivity;
 import com.richie.multimedialearning.audiotrack.AudioTrackActivity;
 import com.richie.multimedialearning.camera.CameraPreviewActivity;
+import com.richie.multimedialearning.mp4.MediaMp4Activity;
 import com.richie.multimedialearning.surfaceview.SurfaceActivity;
 
 /**
@@ -29,6 +30,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.btn_audio_record).setOnClickListener(this);
         findViewById(R.id.btn_audio_track).setOnClickListener(this);
         findViewById(R.id.btn_camera_surface).setOnClickListener(this);
+        findViewById(R.id.btn_media_mp4).setOnClickListener(this);
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
                 || ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
@@ -71,6 +73,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
                 });
                 builder.show();
+                break;
+            case R.id.btn_media_mp4:
+                intent = new Intent(this, MediaMp4Activity.class);
                 break;
             default:
         }
