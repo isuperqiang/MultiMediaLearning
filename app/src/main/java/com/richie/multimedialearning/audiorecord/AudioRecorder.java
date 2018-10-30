@@ -61,25 +61,30 @@ public class AudioRecorder {
     }
 
     /**
-     * 创建录音对象
-     */
-    public void createAudio(String fileName, int audioSource, int sampleRateInHz, int channelConfig, int audioFormat) {
-        // 获得缓冲区字节大小
-        mBufferSizeInBytes = AudioRecord.getMinBufferSize(sampleRateInHz, channelConfig, audioFormat);
-        mAudioRecord = new AudioRecord(audioSource, sampleRateInHz, channelConfig, audioFormat, mBufferSizeInBytes);
-        int state = mAudioRecord.getState();
-        Log.i(TAG, "createAudio state:" + state + ". initialized:" + (state == AudioRecord.STATE_INITIALIZED));
-        mFileName = fileName;
-        mStatus = Status.STATUS_READY;
-    }
-
-    /**
      * 创建默认的录音对象
      *
      * @param fileName 文件名
      */
     public void createDefaultAudio(String fileName) {
         createAudio(fileName, AUDIO_INPUT, AUDIO_SAMPLE_RATE, AUDIO_CHANNEL, AUDIO_ENCODING);
+    }
+
+    /**
+     * 创建录音对象
+     * @param fileName
+     * @param audioSource
+     * @param sampleRateInHz
+     * @param channelConfig
+     * @param audioFormat
+     */
+    public void createAudio(String fileName, int audioSource, int sampleRateInHz, int channelConfig, int audioFormat) {
+        // 获得缓冲区字节大小
+        mBufferSizeInBytes = AudioRecord.getMinBufferSize(sampleRateInHz, channelConfig, audioFormat);
+        mAudioRecord = new AudioRecord(audioSource, sampleRateInHz, channelConfig, audioFormat, mBufferSizeInBytes);
+        int state = mAudioRecord.getState();
+        Log.i(TAG, "createAudio state:" + state + ", initialized:" + (state == AudioRecord.STATE_INITIALIZED));
+        mFileName = fileName;
+        mStatus = Status.STATUS_READY;
     }
 
     /**
@@ -287,24 +292,6 @@ public class AudioRecorder {
         });
     }
 
-    /**
-     * 获取录音对象的状态
-     *
-     * @return
-     */
-    public Status getStatus() {
-        return mStatus;
-    }
-
-    /**
-     * 获取本次录音文件的个数
-     *
-     * @return
-     */
-    public int getPcmFilesCount() {
-        return mFilesName.size();
-    }
-
     public void setRecordStreamListener(RecordStreamListener recordStreamListener) {
         this.mRecordStreamListener = recordStreamListener;
     }
@@ -326,8 +313,18 @@ public class AudioRecorder {
     }
 
     public interface RecordStreamListener {
+        /**
+         * 录音过程中
+         *
+         * @param bytes
+         * @param offset
+         * @param length
+         */
         void onRecording(byte[] bytes, int offset, int length);
 
+        /**
+         * 录音完成
+         */
         void finishRecord();
     }
 }
