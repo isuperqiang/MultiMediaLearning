@@ -67,26 +67,22 @@ public class AudioTracker {
             throw new IllegalStateException("正在播放...");
         }
         Log.d(TAG, "===start===");
-        if (mStatus == Status.STATUS_PAUSE) {
-            mAudioTrack.play();
-        } else {
-            mExecutorService.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        writeAudioData();
-                    } catch (IOException e) {
-                        Log.e(TAG, e.getMessage());
-                        mMainHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(mContext, "播放出错", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    }
+        mExecutorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    writeAudioData();
+                } catch (IOException e) {
+                    Log.e(TAG, e.getMessage());
+                    mMainHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(mContext, "播放出错", Toast.LENGTH_SHORT).show();
+                        }
+                    });
                 }
-            });
-        }
+            }
+        });
         mStatus = Status.STATUS_START;
     }
 
@@ -107,7 +103,6 @@ public class AudioTracker {
             while ((len = dis.read(bytes)) != -1 && mStatus == Status.STATUS_START) {
                 mAudioTrack.write(bytes, 0, len);
             }
-            dis.close();
             mMainHandler.post(new Runnable() {
                 @Override
                 public void run() {
@@ -118,20 +113,6 @@ public class AudioTracker {
             if (dis != null) {
                 dis.close();
             }
-        }
-    }
-
-    /**
-     * 暂停播放
-     */
-    @Deprecated
-    public void pause() {
-        Log.d(TAG, "===pause===");
-        if (mStatus != Status.STATUS_START) {
-            throw new IllegalStateException("没有在播放");
-        } else {
-            mAudioTrack.pause();
-            mStatus = Status.STATUS_PAUSE;
         }
     }
 
@@ -151,8 +132,8 @@ public class AudioTracker {
         if (mAudioTrack != null) {
             mAudioTrack.release();
             mAudioTrack = null;
-            mStatus = Status.STATUS_NO_READY;
         }
+        mStatus = Status.STATUS_NO_READY;
     }
 
     /**
@@ -165,8 +146,6 @@ public class AudioTracker {
         STATUS_READY,
         //播放
         STATUS_START,
-        //暂停
-        STATUS_PAUSE,
         //停止
         STATUS_STOP
     }
