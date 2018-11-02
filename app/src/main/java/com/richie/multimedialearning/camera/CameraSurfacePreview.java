@@ -10,6 +10,7 @@ import android.view.SurfaceView;
 import com.richie.easylog.ILogger;
 import com.richie.easylog.LoggerFactory;
 import com.richie.multimedialearning.utils.CameraUtils;
+import com.richie.multimedialearning.utils.ThreadHelper;
 
 import java.io.IOException;
 
@@ -47,8 +48,13 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
         logger.debug("surfaceCreated");
-        openCamera();
-        startPreviewDisplay();
+        ThreadHelper.getInstance().runOnHandlerThread(new Runnable() {
+            @Override
+            public void run() {
+                openCamera();
+                startPreviewDisplay();
+            }
+        });
     }
 
     @Override
@@ -59,13 +65,17 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         logger.debug("surfaceDestroyed");
-        releaseCamera();
+        ThreadHelper.getInstance().runOnHandlerThread(new Runnable() {
+            @Override
+            public void run() {
+                releaseCamera();
+            }
+        });
     }
 
     private void openCamera() {
         Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
         int number = Camera.getNumberOfCameras();
-        logger.info("camera number:{}", number);
         for (int i = 0; i < number; i++) {
             Camera.getCameraInfo(i, cameraInfo);
             if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
@@ -89,7 +99,7 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
                 mCamera.setPreviewDisplay(mSurfaceHolder);
                 mCamera.startPreview();
             } catch (IOException e) {
-                logger.error("Error while START preview for camera", e);
+                logger.error("startPreviewDisplay error", e);
             }
         }
     }
@@ -101,7 +111,7 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
                 mCamera.setPreviewDisplay(null);
                 mCamera.release();
             } catch (IOException e) {
-                logger.error("releaseCamera: ", e);
+                logger.error("releaseCamera error", e);
             }
             mCamera = null;
         }

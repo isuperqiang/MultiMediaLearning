@@ -10,6 +10,7 @@ import android.view.TextureView;
 import com.richie.easylog.ILogger;
 import com.richie.easylog.LoggerFactory;
 import com.richie.multimedialearning.utils.CameraUtils;
+import com.richie.multimedialearning.utils.ThreadHelper;
 
 import java.io.IOException;
 
@@ -43,10 +44,15 @@ public class CameraTexturePreview extends TextureView implements TextureView.Sur
     }
 
     @Override
-    public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
+    public void onSurfaceTextureAvailable(final SurfaceTexture surface, int width, int height) {
         logger.debug("onSurfaceTextureAvailable. width:{}, height:{}", width, height);
-        openCamera();
-        startPreviewDisplay(surface);
+        ThreadHelper.getInstance().runOnHandlerThread(new Runnable() {
+            @Override
+            public void run() {
+                openCamera();
+                startPreviewDisplay(surface);
+            }
+        });
     }
 
     @Override
@@ -58,7 +64,12 @@ public class CameraTexturePreview extends TextureView implements TextureView.Sur
     @Override
     public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
         logger.debug("onSurfaceTextureDestroyed");
-        releaseCamera();
+        ThreadHelper.getInstance().runOnHandlerThread(new Runnable() {
+            @Override
+            public void run() {
+                releaseCamera();
+            }
+        });
         return true;
     }
 
@@ -70,7 +81,6 @@ public class CameraTexturePreview extends TextureView implements TextureView.Sur
     private void openCamera() {
         Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
         int number = Camera.getNumberOfCameras();
-        logger.info("camera number:{}", number);
         for (int i = 0; i < number; i++) {
             Camera.getCameraInfo(i, cameraInfo);
             if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
@@ -80,7 +90,7 @@ public class CameraTexturePreview extends TextureView implements TextureView.Sur
                     Camera.Parameters params = mCamera.getParameters();
                     params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
                 } catch (Exception e) {
-                    logger.error("openCamera", e);
+                    logger.error("openCamera error", e);
                     mActivity.onBackPressed();
                 }
                 break;
@@ -94,7 +104,7 @@ public class CameraTexturePreview extends TextureView implements TextureView.Sur
                 mCamera.setPreviewTexture(surfaceTexture);
                 mCamera.startPreview();
             } catch (IOException e) {
-                logger.error("Error while START preview for camera", e);
+                logger.error("startPreviewDisplay error", e);
             }
         }
     }
@@ -106,7 +116,7 @@ public class CameraTexturePreview extends TextureView implements TextureView.Sur
                 mCamera.setPreviewTexture(null);
                 mCamera.release();
             } catch (IOException e) {
-                logger.error("releaseCamera: ", e);
+                logger.error("releaseCamera error", e);
             }
             mCamera = null;
         }
