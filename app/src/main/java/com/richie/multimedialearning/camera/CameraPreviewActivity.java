@@ -52,13 +52,12 @@ public class CameraPreviewActivity extends AppCompatActivity {
     }
 
     private void previewCamera() {
+        ConstraintLayout layout = findViewById(R.id.cl_root);
         if (mPreviewType == TYPE_SURFACE_VIEW) {
             CameraSurfacePreview cameraPreview = new CameraSurfacePreview(this);
-            ConstraintLayout layout = findViewById(R.id.cl_root);
             layout.addView(cameraPreview);
         } else {
             CameraTexturePreview cameraPreview = new CameraTexturePreview(this);
-            ConstraintLayout layout = findViewById(R.id.cl_root);
             layout.addView(cameraPreview);
         }
     }

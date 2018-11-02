@@ -64,7 +64,6 @@ public class CameraTexturePreview extends TextureView implements TextureView.Sur
 
     @Override
     public void onSurfaceTextureUpdated(SurfaceTexture surface) {
-        //Log.d(TAG, "onSurfaceTextureUpdated");
         // Invoked every time there's a new Camera preview frame
     }
 
@@ -90,12 +89,13 @@ public class CameraTexturePreview extends TextureView implements TextureView.Sur
     }
 
     private void startPreviewDisplay(SurfaceTexture surfaceTexture) {
-        checkCamera();
-        try {
-            mCamera.setPreviewTexture(surfaceTexture);
-            mCamera.startPreview();
-        } catch (IOException e) {
-            logger.error("Error while START preview for camera", e);
+        if (mCamera != null) {
+            try {
+                mCamera.setPreviewTexture(surfaceTexture);
+                mCamera.startPreview();
+            } catch (IOException e) {
+                logger.error("Error while START preview for camera", e);
+            }
         }
     }
 
@@ -112,9 +112,4 @@ public class CameraTexturePreview extends TextureView implements TextureView.Sur
         }
     }
 
-    private void checkCamera() {
-        if (mCamera == null) {
-            throw new IllegalStateException("Camera must be set when start/stop preview, call <setCamera(Camera)> to set");
-        }
-    }
 }

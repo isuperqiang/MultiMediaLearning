@@ -75,7 +75,7 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
                     Camera.Parameters params = mCamera.getParameters();
                     params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
                 } catch (Exception e) {
-                    logger.error("openCamera: ", e);
+                    logger.error("openCamera error", e);
                     mActivity.onBackPressed();
                 }
                 break;
@@ -84,12 +84,13 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
     }
 
     private void startPreviewDisplay() {
-        checkCamera();
-        try {
-            mCamera.setPreviewDisplay(mSurfaceHolder);
-            mCamera.startPreview();
-        } catch (IOException e) {
-            logger.error("Error while START preview for camera", e);
+        if (mCamera != null) {
+            try {
+                mCamera.setPreviewDisplay(mSurfaceHolder);
+                mCamera.startPreview();
+            } catch (IOException e) {
+                logger.error("Error while START preview for camera", e);
+            }
         }
     }
 
@@ -103,12 +104,6 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
                 logger.error("releaseCamera: ", e);
             }
             mCamera = null;
-        }
-    }
-
-    private void checkCamera() {
-        if (mCamera == null) {
-            throw new IllegalStateException("Camera must be set when start/stop preview, call <setCamera(Camera)> to set");
         }
     }
 
