@@ -8,10 +8,10 @@
 
     <Button
         android:id="@+id/btn_start_play_audio"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="100dp"
-        android:text="Start"
+        android:layout_marginTop="64dp"
+        android:text="(1) Start"
         android:textAllCaps="false"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
@@ -19,9 +19,9 @@
 
     <Button
         android:id="@+id/btn_stop_play_audio"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Stop"
+        android:text="(2) Stop"
         android:textAllCaps="false"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"

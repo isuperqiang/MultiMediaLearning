@@ -10,7 +10,12 @@ import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * @author Richie on 2018.10.16
@@ -18,6 +23,31 @@ import java.io.File;
 public class FileUtils {
 
     private FileUtils() {
+    }
+
+    public static void copyFile(InputStream is, File dest) throws IOException {
+        BufferedInputStream bis = null;
+        BufferedOutputStream bos = null;
+        try {
+            if (dest.exists()) {
+                dest.delete();
+            }
+            bis = new BufferedInputStream(is);
+            bos = new BufferedOutputStream(new FileOutputStream(dest));
+            byte[] bytes = new byte[10240];
+            int len;
+            while ((len = bis.read(bytes)) != -1) {
+                bos.write(bytes, 0, len);
+            }
+            bos.flush();
+        } finally {
+            if (bis != null) {
+                bis.close();
+            }
+            if (bos != null) {
+                bos.close();
+            }
+        }
     }
 
     public static String getWavFilePath(Context context, String name) {
