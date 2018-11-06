@@ -93,6 +93,7 @@ public class MediaMp4Activity extends AppCompatActivity implements View.OnClickL
                     frameRate = trackFormat.getInteger(MediaFormat.KEY_FRAME_RATE);
                 }
             }
+            logger.info("frameRate:{}, maxInputSize:{}", frameRate, maxInputSize);
             //切换视频的信道
             mediaExtractor.selectTrack(videoIndex);
             MediaFormat trackFormat = mediaExtractor.getTrackFormat(videoIndex);
@@ -151,6 +152,7 @@ public class MediaMp4Activity extends AppCompatActivity implements View.OnClickL
                     frameMaxInputSize = trackFormat.getInteger(MediaFormat.KEY_MAX_INPUT_SIZE);
                 }
             }
+
             mediaExtractor.selectTrack(audioIndex);
             MediaFormat trackFormat = mediaExtractor.getTrackFormat(audioIndex);
             mediaMuxer = new MediaMuxer(new File(fileDir, OUTPUT_AUDIO).getAbsolutePath(), MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
@@ -197,7 +199,6 @@ public class MediaMp4Activity extends AppCompatActivity implements View.OnClickL
             int videoTrackIndex = -1;
             int videoMaxInputSize = -1;
             int frameRate = -1;
-
             int videoTrackCount = videoExtractor.getTrackCount();
             for (int i = 0; i < videoTrackCount; i++) {
                 videoFormat = videoExtractor.getTrackFormat(i);
@@ -256,7 +257,6 @@ public class MediaMp4Activity extends AppCompatActivity implements View.OnClickL
                     audioExtractor.unselectTrack(audioTrackIndex);
                     break;
                 }
-
                 audioBufferInfo.size = readAudioSampleSize;
                 audioBufferInfo.presentationTimeUs = audioExtractor.getSampleTime();
                 audioBufferInfo.offset = 0;
