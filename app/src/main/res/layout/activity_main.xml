@@ -56,4 +56,14 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/btn_camera_surface" />
 
+    <Button
+        android:id="@+id/btn_media_codec"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="MediaCodec"
+        android:textAllCaps="false"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_media_mp4" />
+
 </android.support.constraint.ConstraintLayout>

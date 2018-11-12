@@ -84,6 +84,7 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
                     CameraUtils.setCameraDisplayOrientation(mActivity, i, mCamera);
                     Camera.Parameters params = mCamera.getParameters();
                     params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+                    params.setPreviewSize(1280, 720);
                 } catch (Exception e) {
                     logger.error("openCamera error", e);
                     mActivity.onBackPressed();

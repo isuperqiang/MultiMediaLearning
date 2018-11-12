@@ -1,11 +1,11 @@
-package com.richie.multimedialearning.camera;
+package com.richie.multimedialearning.mp4;
 
 import android.app.Activity;
 import android.content.Context;
-import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.util.AttributeSet;
-import android.view.TextureView;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 
 import com.richie.easylog.ILogger;
 import com.richie.easylog.LoggerFactory;
@@ -15,67 +15,69 @@ import com.richie.multimedialearning.utils.ThreadHelper;
 import java.io.IOException;
 
 /**
- * @author Richie on 2018.10.27
- * 使用 TextureView 预览
+ * @author Richie on 2018.08.01
+ * 使用 SurfaceView 预览
  */
-public class CameraTexturePreview extends TextureView implements TextureView.SurfaceTextureListener {
-    private final ILogger logger = LoggerFactory.getLogger(CameraTexturePreview.class);
+public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Callback, Camera.PreviewCallback {
+    private final ILogger logger = LoggerFactory.getLogger(CameraSurfaceView.class);
+    private SurfaceHolder mSurfaceHolder;
     private Camera mCamera;
     private Activity mActivity;
+    private int mPreviewWidth = 1280;
+    private int mPreviewHeight = 720;
+    private int mFrameRate = 30;
+    private H264Encoder mH264Encoder;
 
-    public CameraTexturePreview(Context context) {
+    public CameraSurfaceView(Context context) {
         super(context);
         init();
     }
 
-    public CameraTexturePreview(Context context, AttributeSet attrs) {
+    public CameraSurfaceView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init();
     }
 
-    public CameraTexturePreview(Context context, AttributeSet attrs, int defStyleAttr) {
+    public CameraSurfaceView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
     }
 
     private void init() {
-        setSurfaceTextureListener(this);
+        mSurfaceHolder = getHolder();
+        mSurfaceHolder.addCallback(this);
         mActivity = (Activity) getContext();
     }
 
     @Override
-    public void onSurfaceTextureAvailable(final SurfaceTexture surface, int width, int height) {
-        logger.debug("onSurfaceTextureAvailable. width:{}, height:{}", width, height);
+    public void surfaceCreated(SurfaceHolder holder) {
+        logger.debug("surfaceCreated");
         ThreadHelper.getInstance().runOnHandlerThread(new Runnable() {
             @Override
             public void run() {
                 openCamera();
-                startPreviewDisplay(surface);
+                startPreviewDisplay();
+                mH264Encoder = new H264Encoder(mPreviewWidth, mPreviewHeight, mFrameRate);
+                mH264Encoder.startEncoder();
             }
         });
     }
 
     @Override
-    public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
-        logger.debug("onSurfaceTextureSizeChanged. width:{}, height:{}", width, height);
-        // Ignored, Camera does all the work for us
+    public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+        logger.debug("surfaceChanged: format:{}, width:{}, height:{}", format, width, height);
     }
 
     @Override
-    public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-        logger.debug("onSurfaceTextureDestroyed");
+    public void surfaceDestroyed(SurfaceHolder holder) {
+        logger.debug("surfaceDestroyed");
         ThreadHelper.getInstance().runOnHandlerThread(new Runnable() {
             @Override
             public void run() {
+                mH264Encoder.stopEncoder();
                 releaseCamera();
             }
         });
-        return true;
-    }
-
-    @Override
-    public void onSurfaceTextureUpdated(SurfaceTexture surface) {
-        // Invoked every time there's a new Camera preview frame
     }
 
     private void openCamera() {
@@ -89,7 +91,7 @@ public class CameraTexturePreview extends TextureView implements TextureView.Sur
                     CameraUtils.setCameraDisplayOrientation(mActivity, i, mCamera);
                     Camera.Parameters params = mCamera.getParameters();
                     params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
-                    params.setPreviewSize(1280, 720);
+                    params.setPreviewSize(mPreviewWidth, mPreviewHeight);
                 } catch (Exception e) {
                     logger.error("openCamera error", e);
                     mActivity.onBackPressed();
@@ -99,10 +101,11 @@ public class CameraTexturePreview extends TextureView implements TextureView.Sur
         }
     }
 
-    private void startPreviewDisplay(SurfaceTexture surfaceTexture) {
+    private void startPreviewDisplay() {
         if (mCamera != null) {
             try {
-                mCamera.setPreviewTexture(surfaceTexture);
+                mCamera.setPreviewDisplay(mSurfaceHolder);
+                mCamera.setPreviewCallback(this);
                 mCamera.startPreview();
             } catch (IOException e) {
                 logger.error("startPreviewDisplay error", e);
@@ -114,7 +117,8 @@ public class CameraTexturePreview extends TextureView implements TextureView.Sur
         if (mCamera != null) {
             try {
                 mCamera.stopPreview();
-                mCamera.setPreviewTexture(null);
+                mCamera.setPreviewDisplay(null);
+                mCamera.setPreviewCallback(null);
                 mCamera.release();
             } catch (IOException e) {
                 logger.error("releaseCamera error", e);
@@ -123,4 +127,9 @@ public class CameraTexturePreview extends TextureView implements TextureView.Sur
         }
     }
 
+    @Override
+    public void onPreviewFrame(byte[] data, Camera camera) {
+        logger.debug("onPreviewFrame");
+        mH264Encoder.putData(data);
+    }
 }

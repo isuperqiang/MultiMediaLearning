@@ -11,6 +11,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.widget.Toast;
 
 import com.richie.multimedialearning.R;
+import com.richie.multimedialearning.utils.BarUtils;
 
 /**
  * SurfaceView 预览相机画面
@@ -27,6 +28,7 @@ public class CameraPreviewActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera_preview);
+        BarUtils.setStatusBarVisibility(this, false);
 
         mPreviewType = getIntent().getIntExtra(PREVIEW_TYPE, TYPE_SURFACE_VIEW);
         if (mPreviewType == TYPE_SURFACE_VIEW) {

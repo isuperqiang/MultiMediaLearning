@@ -24,7 +24,6 @@ import java.nio.ByteBuffer;
 public class MediaMp4Activity extends AppCompatActivity implements View.OnClickListener {
     public static final String OUTPUT_VIDEO = "output_video.mp4";
     public static final String OUTPUT_AUDIO = "output_audio.mp4";
-    //private static final String VIDEO_SOURCE_PATH = "/sdcard/DCIM/Camera/FUCamera_20181031_224141.mp4";
     private static final String VIDEO_SOURCE_PATH = "input.mp4";
     private final ILogger logger = LoggerFactory.getLogger(MediaMp4Activity.class);
 

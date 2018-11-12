@@ -33,7 +33,10 @@
         <activity
             android:name=".camera.CameraPreviewActivity"
             android:theme="@style/Theme.AppCompat.NoActionBar" />
-        <activity android:name=".mp4.MediaMp4Activity"></activity>
+        <activity android:name=".mp4.MediaMp4Activity" />
+        <activity
+            android:name=".mp4.MediaCodecActivity"
+            android:theme="@style/Theme.AppCompat.NoActionBar" />
     </application>
 
 </manifest>
