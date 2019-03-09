@@ -8,19 +8,20 @@ import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.widget.Toast;
 
 import com.richie.multimedialearning.R;
 import com.richie.multimedialearning.utils.BarUtils;
 
 /**
- * SurfaceView 预览相机画面
+ * 预览相机画面
  */
 public class CameraPreviewActivity extends AppCompatActivity {
 
     public static final String PREVIEW_TYPE = "preview_type";
-    public static final int TYPE_SURFACE_VIEW = 902;
-    public static final int TYPE_TEXTURE_VIEW = 203;
+    public static final int TYPE_SURFACE_VIEW_CAMERA = 902;
+    public static final int TYPE_SURFACE_VIEW_CAMER2 = 932;
+    public static final int TYPE_TEXTURE_VIEW_CAMERA = 203;
+    public static final int TYPE_TEXTURE_VIEW_CAMER2 = 213;
     private static final int PERM = 212;
     private int mPreviewType;
 
@@ -30,12 +31,7 @@ public class CameraPreviewActivity extends AppCompatActivity {
         setContentView(R.layout.activity_camera_preview);
         BarUtils.setStatusBarVisibility(this, false);
 
-        mPreviewType = getIntent().getIntExtra(PREVIEW_TYPE, TYPE_SURFACE_VIEW);
-        if (mPreviewType == TYPE_SURFACE_VIEW) {
-            Toast.makeText(this, "By SurfaceView", Toast.LENGTH_SHORT).show();
-        } else {
-            Toast.makeText(this, "By TextureView", Toast.LENGTH_SHORT).show();
-        }
+        mPreviewType = getIntent().getIntExtra(PREVIEW_TYPE, TYPE_SURFACE_VIEW_CAMERA);
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) !=
                 PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, PERM);
@@ -55,12 +51,17 @@ public class CameraPreviewActivity extends AppCompatActivity {
 
     private void previewCamera() {
         ConstraintLayout layout = findViewById(R.id.cl_root);
-        if (mPreviewType == TYPE_SURFACE_VIEW) {
+        if (mPreviewType == TYPE_SURFACE_VIEW_CAMERA) {
             CameraSurfacePreview cameraPreview = new CameraSurfacePreview(this);
             layout.addView(cameraPreview);
-        } else {
+        } else if (mPreviewType == TYPE_TEXTURE_VIEW_CAMERA) {
             CameraTexturePreview cameraPreview = new CameraTexturePreview(this);
             layout.addView(cameraPreview);
+        } else if (mPreviewType == TYPE_SURFACE_VIEW_CAMER2) {
+            Camera2SurfacePreview cameraPreview = new Camera2SurfacePreview(this);
+            layout.addView(cameraPreview);
+        } else if (mPreviewType == TYPE_TEXTURE_VIEW_CAMER2) {
+
         }
     }
 

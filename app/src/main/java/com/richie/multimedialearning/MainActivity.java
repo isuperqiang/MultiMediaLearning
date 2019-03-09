@@ -56,7 +56,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 intent = new Intent(this, AudioTrackActivity.class);
                 break;
             case R.id.btn_camera_surface:
-                String[] colors = {"SurfaceView", "TextureView"};
+                String[] colors = {"SurfaceView Camera", "TextureView Camera", "SurfaceView Camera2"
+                        , "TextureView Camera2"};
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
                 builder.setTitle("Pick a preview type");
                 builder.setItems(colors, new DialogInterface.OnClickListener() {
@@ -65,9 +66,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         // the user clicked on colors[which]
                         int previewType;
                         if (which == 0) {
-                            previewType = CameraPreviewActivity.TYPE_SURFACE_VIEW;
+                            previewType = CameraPreviewActivity.TYPE_SURFACE_VIEW_CAMERA;
+                        } else if (which == 1) {
+                            previewType = CameraPreviewActivity.TYPE_TEXTURE_VIEW_CAMERA;
+                        } else if (which == 2) {
+                            previewType = CameraPreviewActivity.TYPE_SURFACE_VIEW_CAMER2;
                         } else {
-                            previewType = CameraPreviewActivity.TYPE_TEXTURE_VIEW;
+                            previewType = CameraPreviewActivity.TYPE_TEXTURE_VIEW_CAMER2;
                         }
                         Intent intent = new Intent(MainActivity.this, CameraPreviewActivity.class);
                         intent.putExtra(CameraPreviewActivity.PREVIEW_TYPE, previewType);
