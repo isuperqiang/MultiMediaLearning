@@ -32,6 +32,7 @@ import java.util.Arrays;
 
 /**
  * @author Richie on 2019.03.07
+ * https://juejin.im/post/5a33a5106fb9a04525782db5
  */
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class Camera2SurfacePreview extends SurfaceView implements SurfaceHolder.Callback {
@@ -224,4 +225,32 @@ public class Camera2SurfacePreview extends SurfaceView implements SurfaceHolder.
         }
     }
 
+    public static boolean hasCamera2(Context mContext) {
+        if (mContext == null) {
+            return false;
+        }
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            return false;
+        }
+        try {
+            CameraManager manager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
+            String[] idList = manager.getCameraIdList();
+            boolean notFull = true;
+            if (idList.length == 0) {
+                notFull = false;
+            } else {
+                for (final String str : idList) {
+                    final CameraCharacteristics characteristics = manager.getCameraCharacteristics(str);
+                    final int supportLevel = characteristics.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL);
+                    if (supportLevel == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY) {
+                        notFull = false;
+                        break;
+                    }
+                }
+            }
+            return notFull;
+        } catch (Exception exp) {
+            return false;
+        }
+    }
 }

@@ -13,6 +13,7 @@ import com.richie.multimedialearning.utils.CameraUtils;
 import com.richie.multimedialearning.utils.ThreadHelper;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * @author Richie on 2018.08.01
@@ -20,6 +21,8 @@ import java.io.IOException;
  */
 public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.Callback {
     private final ILogger logger = LoggerFactory.getLogger(CameraSurfacePreview.class);
+    private static final int MAX_PREVIEW_WIDTH = 1920;
+    private static final int MAX_PREVIEW_HEIGHT = 1080;
     private SurfaceHolder mSurfaceHolder;
     private Camera mCamera;
     private Activity mActivity;
@@ -76,6 +79,7 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
     private void openCamera() {
         Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
         int number = Camera.getNumberOfCameras();
+
         for (int i = 0; i < number; i++) {
             Camera.getCameraInfo(i, cameraInfo);
             if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
@@ -84,10 +88,15 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
                     CameraUtils.setCameraDisplayOrientation(mActivity, i, mCamera);
                     Camera.Parameters params = mCamera.getParameters();
                     params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
-                    params.setPreviewSize(1280, 720);
+                    params.setFlashMode(Camera.Parameters.FLASH_MODE_AUTO);
+                    params.setSceneMode(Camera.Parameters.SCENE_MODE_AUTO);
+                    int[] size = CameraUtils.choosePreviewSize(params, MAX_PREVIEW_WIDTH, MAX_PREVIEW_HEIGHT);
+                    logger.info("size:{}", Arrays.toString(size));
+                    //params.setPreviewSize(size[0], size[1]);
+                    mCamera.setParameters(params);
+                    logger.info("camera opened");
                 } catch (Exception e) {
                     logger.error("openCamera error", e);
-                    mActivity.onBackPressed();
                 }
                 break;
             }
