@@ -12,7 +12,7 @@ import com.richie.easylog.ILogger;
 import com.richie.easylog.LoggerFactory;
 import com.richie.multimedialearning.utils.BitmapUtils;
 
-import java.io.IOException;
+import java.io.File;
 
 /**
  * @author Richie on 2018.10.22
@@ -22,7 +22,6 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
     private volatile boolean mIsDrawing;
     private SurfaceHolder mSurfaceHolder;
     private Paint mPaint;
-    private Canvas mCanvas;
     private Thread mThread;
     private Bitmap mBitmap;
 
@@ -58,11 +57,8 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         logger.debug("onSurfaceChanged. format:{}, width:{}, height:{}", format, width, height);
-        try {
-            mBitmap = BitmapUtils.decodeSampledBitmapFromStream(getContext().getAssets().open("template.jpg"), width, height);
-        } catch (IOException e) {
-            logger.error(e);
-        }
+        mBitmap = BitmapUtils.decodeSampledBitmapFromFile(new File(getContext().getExternalFilesDir(null),
+                "template.jpg"), width, height);
         mIsDrawing = true;
         mThread.start();
     }
@@ -79,22 +75,23 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
     public void run() {
         while (mIsDrawing) {
             logger.debug("draw canvas");
-            mCanvas = mSurfaceHolder.lockCanvas();
-            if (mCanvas != null) {
+            Canvas canvas = mSurfaceHolder.lockCanvas();
+            if (canvas != null) {
                 try {
                     //使用获得的Canvas做具体的绘制
-                    draw();
+                    drawCanvas(canvas);
+                    // 睡眠 100ms
                     Thread.sleep(100);
                 } catch (Exception e) {
                     logger.error(e);
                 } finally {
-                    mSurfaceHolder.unlockCanvasAndPost(mCanvas);
+                    mSurfaceHolder.unlockCanvasAndPost(canvas);
                 }
             }
         }
     }
 
-    private void draw() {
-        mCanvas.drawBitmap(mBitmap, 0, 0, mPaint);
+    private void drawCanvas(Canvas canvas) {
+        canvas.drawBitmap(mBitmap, 0, 0, mPaint);
     }
 }

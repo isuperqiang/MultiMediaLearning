@@ -19,9 +19,6 @@ public class AudioTrackActivity extends AppCompatActivity implements View.OnClic
         setContentView(R.layout.activity_audio_track);
         findViewById(R.id.btn_start_play_audio).setOnClickListener(this);
         findViewById(R.id.btn_stop_play_audio).setOnClickListener(this);
-        mAudioTracker = new AudioTracker(this);
-        String path = FileUtils.getPcmFilePath(this, "hello");
-        mAudioTracker.createAudioTrack(path);
     }
 
     @Override
@@ -33,12 +30,17 @@ public class AudioTrackActivity extends AppCompatActivity implements View.OnClic
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.btn_start_play_audio:
+            case R.id.btn_start_play_audio: {
+                mAudioTracker = new AudioTracker(this);
+                String path = FileUtils.getPcmFilePath(this, "hello");
+                mAudioTracker.createAudioTrack(path);
                 mAudioTracker.start();
-                break;
-            case R.id.btn_stop_play_audio:
+            }
+            break;
+            case R.id.btn_stop_play_audio: {
                 mAudioTracker.stop();
-                break;
+            }
+            break;
             default:
         }
     }

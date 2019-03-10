@@ -16,6 +16,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.UUID;
 
 /**
  * @author Richie on 2018.10.16
@@ -78,13 +79,24 @@ public class FileUtils {
         return filesDir;
     }
 
+    /**
+     * 获取 UUID 作为唯一标识 eg: c9ce6bdd155749be91153a6d76a484eb
+     *
+     * @return 32 个字符
+     */
+    public static String getUUID32() {
+        return UUID.randomUUID().toString().replace("-", "").toLowerCase();
+    }
+
     public static void deleteFileRecursively(File file) {
         if (file.isFile()) {
             file.delete();
         } else {
             File[] files = file.listFiles();
-            for (File f : files) {
-                deleteFileRecursively(f);
+            if (files != null) {
+                for (File f : files) {
+                    deleteFileRecursively(f);
+                }
             }
         }
     }

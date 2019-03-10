@@ -55,9 +55,9 @@ public class MediaMp4Activity extends AppCompatActivity implements View.OnClickL
 
     private void checkInputFile() {
         try {
-            InputStream inputStream = getAssets().open(VIDEO_SOURCE_PATH);
             File dest = new File(FileUtils.getFileDir(this), VIDEO_SOURCE_PATH);
             if (!dest.exists()) {
+                InputStream inputStream = getAssets().open(VIDEO_SOURCE_PATH);
                 FileUtils.copyFile(inputStream, dest);
             }
         } catch (IOException e) {
