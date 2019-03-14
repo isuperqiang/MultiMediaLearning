@@ -34,7 +34,7 @@ public class AudioRecorder {
     // 编码
     private final static int AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
     // 缓冲区字节大小
-    private int mBufferSizeInBytes = 0;
+    private int mBufferSizeInBytes;
     // 线程池
     private static ExecutorService mExecutorService = Executors.newSingleThreadExecutor();
     // 录音对象
@@ -167,10 +167,10 @@ public class AudioRecorder {
         try {
             bos = new BufferedOutputStream(new FileOutputStream(file));
             byte[] audioData = new byte[mBufferSizeInBytes];
-            int readSize;
             while (mStatus == Status.STATUS_START) {
-                readSize = mAudioRecord.read(audioData, 0, mBufferSizeInBytes);
-                if (AudioRecord.ERROR_INVALID_OPERATION != readSize) {
+                int readSize = mAudioRecord.read(audioData, 0, mBufferSizeInBytes);
+                if (AudioRecord.ERROR_INVALID_OPERATION != readSize && AudioRecord.ERROR_BAD_VALUE != readSize
+                        && AudioRecord.ERROR_DEAD_OBJECT != readSize && AudioRecord.ERROR != readSize) {
                     try {
                         bos.write(audioData, 0, readSize);
                         if (mRecordStreamListener != null) {
