@@ -21,8 +21,8 @@ import java.util.Arrays;
  */
 public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.Callback {
     private final ILogger logger = LoggerFactory.getLogger(CameraSurfacePreview.class);
-    private static final int MAX_PREVIEW_WIDTH = 1920;
-    private static final int MAX_PREVIEW_HEIGHT = 1080;
+    private static final int MAX_PREVIEW_WIDTH = 1280;
+    private static final int MAX_PREVIEW_HEIGHT = 720;
     private SurfaceHolder mSurfaceHolder;
     private Camera mCamera;
     private Activity mActivity;
@@ -87,9 +87,6 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
                     mCamera = Camera.open(i);
                     CameraUtils.setCameraDisplayOrientation(mActivity, i, mCamera);
                     Camera.Parameters params = mCamera.getParameters();
-                    params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
-                    params.setFlashMode(Camera.Parameters.FLASH_MODE_AUTO);
-                    params.setSceneMode(Camera.Parameters.SCENE_MODE_AUTO);
                     int[] size = CameraUtils.choosePreviewSize(params, MAX_PREVIEW_WIDTH, MAX_PREVIEW_HEIGHT);
                     logger.info("size:{}", Arrays.toString(size));
                     //params.setPreviewSize(size[0], size[1]);

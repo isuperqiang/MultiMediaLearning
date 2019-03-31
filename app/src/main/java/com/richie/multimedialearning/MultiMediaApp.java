@@ -37,6 +37,7 @@ public class MultiMediaApp extends Application {
             byte[] bytes = new byte[is.available()];
             is.read(bytes);
             fos.write(bytes);
+            fos.flush();
             fos.close();
             is.close();
         } catch (IOException e) {

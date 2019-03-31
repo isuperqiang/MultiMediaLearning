@@ -60,7 +60,7 @@ public class CameraPreviewActivity extends AppCompatActivity {
         } else if (mPreviewType == TYPE_SURFACE_VIEW_CAMER2) {
             Camera2SurfacePreview cameraPreview = new Camera2SurfacePreview(this);
             layout.addView(cameraPreview);
-        } else if (mPreviewType == TYPE_TEXTURE_VIEW_CAMER2) {
+            //} else if (mPreviewType == TYPE_TEXTURE_VIEW_CAMER2) {
 
         }
     }

@@ -7,6 +7,7 @@ import android.media.MediaMuxer;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.widget.Toast;
 
 import com.richie.easylog.ILogger;
 import com.richie.easylog.LoggerFactory;
@@ -23,7 +24,7 @@ import java.nio.ByteBuffer;
  */
 public class MediaMp4Activity extends AppCompatActivity implements View.OnClickListener {
     public static final String OUTPUT_VIDEO = "output_video.mp4";
-    public static final String OUTPUT_AUDIO = "output_audio.mp4";
+    public static final String OUTPUT_AUDIO = "output_audio.mp3";
     private static final String VIDEO_SOURCE_PATH = "input.mp4";
     private final ILogger logger = LoggerFactory.getLogger(MediaMp4Activity.class);
 
@@ -85,6 +86,7 @@ public class MediaMp4Activity extends AppCompatActivity implements View.OnClickL
                 String mimeType = trackFormat.getString(MediaFormat.KEY_MIME);
                 // //找到视频轨
                 if (mimeType.startsWith("video/")) {
+                    logger.info("video mimeType:{}", mimeType);
                     videoIndex = i;
                     // 获取视频最大的输入大小
                     maxInputSize = trackFormat.getInteger(MediaFormat.KEY_MAX_INPUT_SIZE);
@@ -92,7 +94,7 @@ public class MediaMp4Activity extends AppCompatActivity implements View.OnClickL
                     frameRate = trackFormat.getInteger(MediaFormat.KEY_FRAME_RATE);
                 }
             }
-            logger.info("frameRate:{}, maxInputSize:{}", frameRate, maxInputSize);
+            logger.info("videoIndex:{}, frameRate:{}, maxInputSize:{}", videoIndex, frameRate, maxInputSize);
             //切换视频的信道
             mediaExtractor.selectTrack(videoIndex);
             MediaFormat trackFormat = mediaExtractor.getTrackFormat(videoIndex);
@@ -123,6 +125,7 @@ public class MediaMp4Activity extends AppCompatActivity implements View.OnClickL
             }
 
             logger.info("finish extract video");
+            Toast.makeText(this, "分离视频完成", Toast.LENGTH_SHORT).show();
         } catch (IOException e) {
             logger.error(e);
         } finally {
@@ -134,7 +137,7 @@ public class MediaMp4Activity extends AppCompatActivity implements View.OnClickL
         }
     }
 
-    // 分离视频的纯音频, 输入视频是 input.mp4, 输出的音频为 output_audio.mp4
+    // 分离视频的纯音频, 输入视频是 input.mp4, 输出的音频为 output_audio.mp3
     private void extractAudio() {
         MediaExtractor mediaExtractor = new MediaExtractor();
         MediaMuxer mediaMuxer = null;
@@ -146,7 +149,9 @@ public class MediaMp4Activity extends AppCompatActivity implements View.OnClickL
             int frameMaxInputSize = -1;
             for (int i = 0; i < trackCount; i++) {
                 MediaFormat trackFormat = mediaExtractor.getTrackFormat(i);
-                if (trackFormat.getString(MediaFormat.KEY_MIME).startsWith("audio/")) {
+                String mimeType = trackFormat.getString(MediaFormat.KEY_MIME);
+                if (mimeType.startsWith("audio/")) {
+                    logger.info("audio mimeType:{}", mimeType);
                     audioIndex = i;
                     frameMaxInputSize = trackFormat.getInteger(MediaFormat.KEY_MAX_INPUT_SIZE);
                 }
@@ -174,6 +179,7 @@ public class MediaMp4Activity extends AppCompatActivity implements View.OnClickL
             }
 
             logger.info("finish extract audio");
+            Toast.makeText(this, "分离音频完成", Toast.LENGTH_SHORT).show();
         } catch (IOException e) {
             logger.error(e);
         } finally {
@@ -265,6 +271,7 @@ public class MediaMp4Activity extends AppCompatActivity implements View.OnClickL
             }
 
             logger.info("finish muxer media");
+            Toast.makeText(this, "混合音视频完成", Toast.LENGTH_SHORT).show();
         } catch (IOException e) {
             logger.error(e);
         } finally {

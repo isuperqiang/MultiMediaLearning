@@ -20,6 +20,8 @@ import java.io.IOException;
  */
 public class CameraTexturePreview extends TextureView implements TextureView.SurfaceTextureListener {
     private final ILogger logger = LoggerFactory.getLogger(CameraTexturePreview.class);
+    private static final int MAX_PREVIEW_WIDTH = 1280;
+    private static final int MAX_PREVIEW_HEIGHT = 720;
     private Camera mCamera;
     private Activity mActivity;
 
@@ -88,11 +90,10 @@ public class CameraTexturePreview extends TextureView implements TextureView.Sur
                     mCamera = Camera.open(i);
                     CameraUtils.setCameraDisplayOrientation(mActivity, i, mCamera);
                     Camera.Parameters params = mCamera.getParameters();
-                    params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
-                    params.setPreviewSize(1280, 720);
+                    params.setPreviewSize(MAX_PREVIEW_WIDTH, MAX_PREVIEW_HEIGHT);
+                    mCamera.setParameters(params);
                 } catch (Exception e) {
                     logger.error("openCamera error", e);
-                    mActivity.onBackPressed();
                 }
                 break;
             }

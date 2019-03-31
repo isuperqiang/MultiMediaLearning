@@ -14,7 +14,7 @@ import android.view.View;
 import com.richie.multimedialearning.audiorecord.AudioRecordActivity;
 import com.richie.multimedialearning.audiotrack.AudioTrackActivity;
 import com.richie.multimedialearning.camera.CameraPreviewActivity;
-import com.richie.multimedialearning.mp4.MediaCodecActivity;
+import com.richie.multimedialearning.codec.MediaCodecActivity;
 import com.richie.multimedialearning.mp4.MediaMp4Activity;
 import com.richie.multimedialearning.surfaceview.SurfaceActivity;
 
@@ -55,9 +55,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.btn_audio_track:
                 intent = new Intent(this, AudioTrackActivity.class);
                 break;
-            case R.id.btn_camera_surface:
-                String[] colors = {"SurfaceView Camera", "TextureView Camera", "SurfaceView Camera2"
-                        , "TextureView Camera2"};
+            case R.id.btn_camera_surface: {
+                String[] colors = {"SurfaceView Camera", "TextureView Camera", "SurfaceView Camera2"};
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
                 builder.setTitle("Pick a preview type");
                 builder.setItems(colors, new DialogInterface.OnClickListener() {
@@ -80,6 +79,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
                 });
                 builder.show();
+            }
                 break;
             case R.id.btn_media_mp4:
                 intent = new Intent(this, MediaMp4Activity.class);
