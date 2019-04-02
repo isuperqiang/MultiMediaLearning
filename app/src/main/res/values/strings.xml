@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">MultiMedia</string>
+    <string name="title_activity_codec">CodecActivity</string>
 </resources>

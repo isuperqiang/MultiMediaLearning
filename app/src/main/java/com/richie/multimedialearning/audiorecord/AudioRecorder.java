@@ -28,7 +28,7 @@ public class AudioRecorder {
     private final static int AUDIO_INPUT = MediaRecorder.AudioSource.MIC;
     // 44100是目前的标准，但是某些设备仍然支持22050，16000，11025
     // 采样频率一般共分为22.05KHz、44.1KHz、48KHz三个等级
-    private final static int AUDIO_SAMPLE_RATE = 16000;
+    private final static int AUDIO_SAMPLE_RATE = 44100;
     // 单声道
     private final static int AUDIO_CHANNEL = AudioFormat.CHANNEL_IN_MONO;
     // 编码
@@ -36,7 +36,7 @@ public class AudioRecorder {
     // 缓冲区字节大小
     private int mBufferSizeInBytes;
     // 线程池
-    private static ExecutorService mExecutorService = Executors.newSingleThreadExecutor();
+    private ExecutorService mExecutorService = Executors.newSingleThreadExecutor();
     // 录音对象
     private AudioRecord mAudioRecord;
     // 录音状态
@@ -75,6 +75,10 @@ public class AudioRecorder {
     public void createAudio(String fileName, int audioSource, int sampleRateInHz, int channelConfig, int audioFormat) {
         // 获得缓冲区字节大小
         mBufferSizeInBytes = AudioRecord.getMinBufferSize(sampleRateInHz, channelConfig, audioFormat);
+        if (mBufferSizeInBytes == AudioRecord.ERROR_BAD_VALUE || mBufferSizeInBytes == AudioRecord.ERROR) {
+            throw new RuntimeException("AudioRecord is not available");
+        }
+
         mAudioRecord = new AudioRecord(audioSource, sampleRateInHz, channelConfig, audioFormat, mBufferSizeInBytes);
         int state = mAudioRecord.getState();
         Log.i(TAG, "createAudio state:" + state + ", initialized:" + (state == AudioRecord.STATE_INITIALIZED));

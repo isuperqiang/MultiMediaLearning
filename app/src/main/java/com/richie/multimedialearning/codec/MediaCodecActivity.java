@@ -116,9 +116,9 @@ public class MediaCodecActivity extends AppCompatActivity {
                     mMediaExtractor.selectTrack(i);
                     int width = trackFormat.getInteger(MediaFormat.KEY_WIDTH);
                     int height = trackFormat.getInteger(MediaFormat.KEY_HEIGHT);
-                    int rotation = trackFormat.getInteger(MediaFormat.KEY_ROTATION);
-                    logger.info("mimeType:{}, sampleTime:{}, width:{}, height:{}, rotation:{}",
-                            mimeType, mMediaExtractor.getSampleTime(), width, height, rotation);
+                    //int rotation = trackFormat.getInteger(MediaFormat.KEY_ROTATION);
+                    logger.info("mimeType:{}, sampleTime:{}, width:{}, height:{}",
+                            mimeType, mMediaExtractor.getSampleTime(), width, height);
                     try {
                         mMediaCodec = MediaCodec.createDecoderByType(mimeType);
                         mMediaCodec.configure(trackFormat, mSurface, null, 0);

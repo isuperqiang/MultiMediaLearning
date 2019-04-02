@@ -14,7 +14,7 @@ import android.view.View;
 import com.richie.multimedialearning.audiorecord.AudioRecordActivity;
 import com.richie.multimedialearning.audiotrack.AudioTrackActivity;
 import com.richie.multimedialearning.camera.CameraPreviewActivity;
-import com.richie.multimedialearning.codec.MediaCodecActivity;
+import com.richie.multimedialearning.codec.CodecActivity;
 import com.richie.multimedialearning.mp4.MediaMp4Activity;
 import com.richie.multimedialearning.surfaceview.SurfaceActivity;
 
@@ -85,7 +85,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 intent = new Intent(this, MediaMp4Activity.class);
                 break;
             case R.id.btn_media_codec:
-                intent = new Intent(this, MediaCodecActivity.class);
+                intent = new Intent(this, CodecActivity.class);
                 break;
             default:
         }
