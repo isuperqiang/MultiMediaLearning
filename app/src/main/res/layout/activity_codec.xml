@@ -6,9 +6,8 @@
     android:layout_height="match_parent"
     tools:context="com.richie.multimedialearning.codec.CodecActivity">
 
-
     <Button
-        android:id="@+id/btn_start_encode_audio"
+        android:id="@+id/btn_start_record_encode_audio"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
@@ -20,7 +19,7 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
-        android:id="@+id/btn_stop_encode_audio"
+        android:id="@+id/btn_stop_record_encode_audio"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
@@ -29,7 +28,19 @@
         android:text="停止录音和编码音频"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btn_start_encode_audio" />
+        app:layout_constraintTop_toBottomOf="@id/btn_start_record_encode_audio" />
+
+    <Button
+        android:id="@+id/btn_start_encode_audio"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:text="开始编码音频 pcm2aac"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_stop_record_encode_audio" />
 
     <Button
         android:id="@+id/btn_start_decode_audio"
@@ -38,10 +49,10 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
-        android:text="开始解码音频"
+        android:text="开始解码音频 aac2pcm"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btn_stop_encode_audio" />
+        app:layout_constraintTop_toBottomOf="@id/btn_start_encode_audio" />
 
 
 </android.support.constraint.ConstraintLayout>
