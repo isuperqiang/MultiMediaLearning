@@ -11,7 +11,6 @@ import android.util.Log;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
 /**
@@ -75,7 +74,7 @@ public class AudioEncoder {
     public void start(File outFile) throws IOException {
         Log.d(TAG, "start() called with: outFile = [" + outFile + "]");
         mStopped = false;
-        OutputStream fos = new FileOutputStream(outFile);
+        FileOutputStream fos = new FileOutputStream(outFile);
         mMediaCodec.start();
         mAudioRecord.startRecording();
         byte[] buffer = new byte[mBufferSizeInBytes];
@@ -119,8 +118,8 @@ public class AudioEncoder {
             fos.close();
             mAudioRecord.stop();
             mMediaCodec.stop();
-            mMediaCodec.release();
             mAudioRecord.release();
+            mMediaCodec.release();
         }
     }
 

@@ -17,7 +17,7 @@ import java.util.List;
  * Created by HXL on 16/8/11.
  * 将pcm文件转化为wav文件
  */
-class PcmToWav {
+public class PcmToWav {
     private static final String TAG = "PcmToWav";
 
     /**
@@ -113,16 +113,16 @@ class PcmToWav {
             return false;
         }
         int totalSize = (int) file.length();
-        // 填入参数，比特率等等。这里用的是16位单声道 8000 hz
+        // 填入参数，比特率等等。这里用的是16位单声道 44.1 hz
         WaveHeader header = new WaveHeader();
         // 长度字段 = 内容的大小（TOTAL_SIZE) +
         // 头部字段的大小(不包括前面4字节的标识符RIFF以及fileLength本身的4字节)
         header.fileLength = totalSize + (44 - 8);
         header.fmthdrleth = 16;
         header.bitsPerSample = 16;
-        header.channels = 2;
+        header.channels = 1;
         header.formatTag = 0x0001;
-        header.samplesPerSec = 8000;
+        header.samplesPerSec = 44100;
         header.blockAlign = (short) (header.channels * header.bitsPerSample / 8);
         header.avgBytesPerSec = header.blockAlign * header.samplesPerSec;
         header.dataHdrLeth = totalSize;
@@ -147,7 +147,7 @@ class PcmToWav {
         BufferedOutputStream ouStream = null;
         InputStream inStream = null;
         try {
-            byte buffer[] = new byte[1024 * 4]; // Length of All Files, Total Size
+            byte buffer[] = new byte[1024 * 8]; // Length of All Files, Total Size
             ouStream = new BufferedOutputStream(new FileOutputStream(destinationPath));
             ouStream.write(h, 0, h.length);
             inStream = new BufferedInputStream(new FileInputStream(file));

@@ -5,8 +5,8 @@ import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.util.Log;
 
+import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -14,21 +14,16 @@ import java.nio.ByteBuffer;
 /**
  * @author Richie on 2019.04.02
  */
-public class AACAudioEncoder {
+public class AacAudioEncoder {
     private final static String TAG = "AACAudioEncoder";
     private final static String AUDIO_MIME = "audio/mp4a-latm";
-    private final static long audioBytesPerSample = 44100 * 16 / 8;
-    private String rawAudioFile;
+    private final static long AUDIO_BYTES_PER_SAMPLE = 44100 * 16 / 8;
 
-    AACAudioEncoder(String rawAudioFile) {
-        this.rawAudioFile = rawAudioFile;
-    }
-
-    public void encodeToFile(String outEncodeFile) {
+    public static void encodeToFile(File pcmAudioFile, File outEncodeFile) {
         FileInputStream fisRawAudio = null;
         FileOutputStream fosAccAudio = null;
         try {
-            fisRawAudio = new FileInputStream(rawAudioFile);
+            fisRawAudio = new FileInputStream(pcmAudioFile);
             fosAccAudio = new FileOutputStream(outEncodeFile);
             final MediaCodec audioEncoder = createACCAudioDecoder();
             audioEncoder.start();
@@ -39,7 +34,7 @@ public class AACAudioEncoder {
             long audioTimeUs = 0;
             MediaCodec.BufferInfo outBufferInfo = new MediaCodec.BufferInfo();
             boolean readRawAudioEOS = false;
-            byte[] rawInputBytes = new byte[4096];
+            byte[] rawInputBytes = new byte[8192];
             int readRawAudioCount = 0;
             int rawAudioSize = 0;
             long lastAudioPresentationTimeUs = 0;
@@ -67,10 +62,11 @@ public class AACAudioEncoder {
                             inputBuffer.put(rawInputBytes, 0, readRawAudioCount);
                             rawAudioSize += readRawAudioCount;
                             audioEncoder.queueInputBuffer(inputBufIndex, 0, readRawAudioCount, audioTimeUs, 0);
-                            audioTimeUs = (long) (1000000 * (rawAudioSize / 2.0) / audioBytesPerSample);
+                            audioTimeUs = (long) (1000000 * (rawAudioSize / 2.0) / AUDIO_BYTES_PER_SAMPLE);
                         }
                     }
                 }
+
                 outputBufIndex = audioEncoder.dequeueOutputBuffer(outBufferInfo, 10000);
                 if (outputBufIndex >= 0) {
                     // Simply ignore codec config buffers.
@@ -84,7 +80,7 @@ public class AACAudioEncoder {
                         outBuffer.position(outBufferInfo.offset);
                         outBuffer.limit(outBufferInfo.offset + outBufferInfo.size);
                         Log.i(TAG, String.format(" writing audio sample : size=%s , presentationTimeUs=%s", outBufferInfo.size, outBufferInfo.presentationTimeUs));
-                        if (lastAudioPresentationTimeUs < outBufferInfo.presentationTimeUs) {
+                        if (lastAudioPresentationTimeUs <= outBufferInfo.presentationTimeUs) {
                             lastAudioPresentationTimeUs = outBufferInfo.presentationTimeUs;
                             int outBufSize = outBufferInfo.size;
                             int outPacketSize = outBufSize + 7;
@@ -110,10 +106,8 @@ public class AACAudioEncoder {
                     Log.i(TAG, "format change : " + audioFormat);
                 }
             }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e(TAG, "encodeToFile: ", e);
         } finally {
             try {
                 if (fisRawAudio != null) {
@@ -128,12 +122,12 @@ public class AACAudioEncoder {
         }
     }
 
-    private MediaCodec createACCAudioDecoder() throws IOException {
+    private static MediaCodec createACCAudioDecoder() throws IOException {
         MediaCodec codec = MediaCodec.createEncoderByType(AUDIO_MIME);
         MediaFormat format = new MediaFormat();
         format.setString(MediaFormat.KEY_MIME, AUDIO_MIME);
-        format.setInteger(MediaFormat.KEY_BIT_RATE, 128000);
-        format.setInteger(MediaFormat.KEY_CHANNEL_COUNT, 2);
+        format.setInteger(MediaFormat.KEY_BIT_RATE, 64000);
+        format.setInteger(MediaFormat.KEY_CHANNEL_COUNT, 1);
         format.setInteger(MediaFormat.KEY_SAMPLE_RATE, 44100);
         format.setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC);
         codec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
@@ -147,7 +141,7 @@ public class AACAudioEncoder {
      * <p>
      * Note the packetLen must count in the ADTS header itself.
      **/
-    private void addADTStoPacket(byte[] packet, int packetLen) {
+    private static void addADTStoPacket(byte[] packet, int packetLen) {
         int profile = 2;  //AAC LC
         //39=MediaCodecInfo.CodecProfileLevel.AACObjectELD;
         int freqIdx = 4;  //44.1KHz

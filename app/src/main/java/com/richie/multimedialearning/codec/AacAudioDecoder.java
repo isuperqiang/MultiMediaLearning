@@ -1,10 +1,8 @@
 package com.richie.multimedialearning.codec;
 
-import android.media.AudioFormat;
 import android.media.MediaCodec;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
-import android.media.MediaRecorder;
 import android.util.Log;
 
 import java.io.File;
@@ -16,65 +14,17 @@ import java.nio.ByteBuffer;
 /**
  * @author Richie on 2019.04.02
  */
-public class AudioDecoder {
-    public static final String MIMETYPE_AUDIO_AAC = "audio/mp4a-latm";
-    private static final String TAG = "AudioDecoder";
-    // 音频输入-麦克风
-    private final static int AUDIO_INPUT = MediaRecorder.AudioSource.MIC;
-    // 44100是目前的标准
-    private final static int AUDIO_SAMPLE_RATE = 44100;
-    // 单声道
-    private final static int AUDIO_CHANNEL = AudioFormat.CHANNEL_IN_MONO;
-    // 编码
-    private final static int AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
-    // 比特率
-    private static final int BIT_RATE = 64000;
-    private MediaCodec mMediaCodec;
+public class AacAudioDecoder {
+    private static final String TAG = "AacAudioDecoder";
 
-    public void createMediaCodec() {
-        MediaExtractor mediaExtractor = new MediaExtractor();
-        try {
-            mediaExtractor.setDataSource("");
-            for (int i = 0, count = mediaExtractor.getTrackCount(); i < count; i++) {
-                MediaFormat format = mediaExtractor.getTrackFormat(i);
-                String mime = format.getString(MediaFormat.KEY_MIME);
-                if (mime.startsWith("audio/")) {
-                    mediaExtractor.selectTrack(i);
-                    mMediaCodec = MediaCodec.createDecoderByType(mime);
-                    mMediaCodec.configure(format, null, null, 0);
-                    break;
-                }
-            }
-        } catch (IOException e) {
-            Log.e(TAG, "createMediaCodec: ", e);
-        }
-
-        if (mMediaCodec == null) {
-            return;
-        }
-
-        long startTimeNano = System.nanoTime();
-        mMediaCodec.start();
-        ByteBuffer[] inputBuffers = mMediaCodec.getInputBuffers();
-        ByteBuffer[] outputBuffers = mMediaCodec.getOutputBuffers();
-        while (true) {
-            int inputBufferIndex = mMediaCodec.dequeueInputBuffer(-1);
-            if (inputBufferIndex >= 0) {
-                ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
-                inputBuffer.clear();
-                int readSize = mediaExtractor.readSampleData(inputBuffer, 0);
-                if (readSize > 0) {
-                    mMediaCodec.queueInputBuffer(inputBufferIndex, 0, readSize, (System.nanoTime() - startTimeNano) / 1000, 0);
-                    mediaExtractor.advance();
-                } else {
-                    break;
-                }
-            }
-
-        }
-    }
-
-    public void decodeAac2Pcm(File encodedFile, File decodedFile) throws IOException {
+    /**
+     * 利用 MediaExtractor 和 MediaCodec 来提取编码后的音频数据并解压成音频源数据
+     *
+     * @param encodedFile
+     * @param decodedFile
+     * @throws IOException
+     */
+    public static void decodeAac2Pcm(File encodedFile, File decodedFile) throws IOException {
         Log.d(TAG, "decodeAac2Pcm() called with: encodedFile = [" + encodedFile + "], decodedFile = [" + decodedFile + "]");
         MediaExtractor extractor = new MediaExtractor();
         extractor.setDataSource(encodedFile.getAbsolutePath());

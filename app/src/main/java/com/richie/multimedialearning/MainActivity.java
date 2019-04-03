@@ -17,6 +17,8 @@ import com.richie.multimedialearning.camera.CameraPreviewActivity;
 import com.richie.multimedialearning.codec.CodecActivity;
 import com.richie.multimedialearning.mp4.MediaMp4Activity;
 import com.richie.multimedialearning.surfaceview.SurfaceActivity;
+import com.richie.multimedialearning.utils.FileUtils;
+import com.richie.multimedialearning.utils.ThreadHelper;
 
 /**
  * Main 主界面
@@ -40,6 +42,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
                     Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA}, 0);
         }
+
+        // 将 assets 下面的所有文件拷贝到外部存储私有目录下
+        ThreadHelper.getInstance().execute(new Runnable() {
+            @Override
+            public void run() {
+                FileUtils.copyAssets2FileDir(MainActivity.this);
+            }
+        });
     }
 
     @Override

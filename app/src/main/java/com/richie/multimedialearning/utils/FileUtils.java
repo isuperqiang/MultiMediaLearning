@@ -3,12 +3,15 @@ package com.richie.multimedialearning.utils;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;
+import android.content.res.AssetManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
+import android.text.TextUtils;
+import android.util.Log;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -16,26 +19,74 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
  * @author Richie on 2018.10.16
  */
 public class FileUtils {
+    private static final String TAG = "FileUtils";
 
     private FileUtils() {
+    }
+
+    /**
+     * 将 assets 里面的所有文件拷贝到应用外部存储目录下，保留文件树结构，不会覆盖原有数据
+     *
+     * @param context
+     */
+    public static void copyAssets2FileDir(Context context) {
+        AssetManager assets = context.getAssets();
+        List<String> fileTree = new ArrayList<>(16);
+        listAssetsRecursively(assets, "", fileTree);
+        File externalAssetsDir = getExternalAssetsDir(context);
+        for (String s : fileTree) {
+            try {
+                InputStream is = assets.open(s);
+                File dest = new File(externalAssetsDir, s);
+                if (dest.exists()) {
+                    continue;
+                }
+                copyFile(is, dest);
+            } catch (IOException e) {
+                Log.e(TAG, "copyAssets2FileDir: " + s, e);
+            }
+        }
+    }
+
+    private static void listAssetsRecursively(AssetManager assetManager, String dirName, List<String> fileTree) {
+        try {
+            String[] list = assetManager.list(dirName);
+            if (list != null && list.length > 0) {
+                // is dir
+                for (String s : list) {
+                    String dir = TextUtils.isEmpty(dirName) ? s : dirName + File.separator + s;
+                    listAssetsRecursively(assetManager, dir, fileTree);
+                }
+            } else {
+                fileTree.add(dirName);
+            }
+        } catch (IOException e) {
+            Log.e(TAG, "listAssetsRecursively: ", e);
+        }
     }
 
     public static void copyFile(InputStream is, File dest) throws IOException {
         BufferedInputStream bis = null;
         BufferedOutputStream bos = null;
         try {
+            File parentFile = dest.getParentFile();
+            if (!parentFile.exists()) {
+                parentFile.mkdirs();
+            }
             if (dest.exists()) {
                 dest.delete();
             }
             bis = new BufferedInputStream(is);
             bos = new BufferedOutputStream(new FileOutputStream(dest));
-            byte[] bytes = new byte[10240];
+            byte[] bytes = new byte[8192];
             int len;
             while ((len = bis.read(bytes)) != -1) {
                 bos.write(bytes, 0, len);
@@ -51,14 +102,28 @@ public class FileUtils {
         }
     }
 
+    public static File getExternalAssetsDir(Context context) {
+        File fileDir = getFileDir(context);
+        File assetsDir = new File(fileDir, "assets");
+        if (!assetsDir.exists()) {
+            assetsDir.mkdirs();
+        }
+        return assetsDir;
+    }
+
     public static String getWavFilePath(Context context, String name) {
+        File wavFileDir = getWavFileDir(context);
+        File wavFile = new File(wavFileDir, name + ".wav");
+        return wavFile.getAbsolutePath();
+    }
+
+    public static File getWavFileDir(Context context) {
         File fileDir = getFileDir(context);
         File wavFileDir = new File(fileDir, "wav");
         if (!wavFileDir.exists()) {
             wavFileDir.mkdirs();
         }
-        File wavFile = new File(wavFileDir, name + ".wav");
-        return wavFile.getAbsolutePath();
+        return wavFileDir;
     }
 
     public static String getPcmFilePath(Context context, String name) {
