@@ -10,7 +10,7 @@ import java.util.List;
 /**
  * @author Richie on 2018.10.27
  */
-public class CameraUtils {
+public final class CameraUtils {
     private static final String TAG = "CameraUtils";
     private static boolean DEBUG = true;
 
@@ -52,6 +52,11 @@ public class CameraUtils {
             result = (info.orientation - degrees + 360) % 360;
         }
         camera.setDisplayOrientation(result);
+    }
+
+    public static List<Integer> getSupportedPreviewFormats(Camera.Parameters parameters) {
+        List<Integer> supportedPreviewFormats = parameters.getSupportedPreviewFormats();
+        return supportedPreviewFormats;
     }
 
     /**
@@ -110,6 +115,9 @@ public class CameraUtils {
         for (Camera.Size size : parms.getSupportedPreviewSizes()) {
             if (size.width == width && size.height == height) {
                 parms.setPreviewSize(width, height);
+                if (DEBUG) {
+                    Log.d(TAG, "setPreviewSize " + width + "x" + height);
+                }
                 return new int[]{width, height};
             }
         }

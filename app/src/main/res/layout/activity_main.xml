@@ -37,10 +37,10 @@
         app:layout_constraintTop_toBottomOf="@id/btn_audio_record" />
 
     <Button
-        android:id="@+id/btn_camera_surface"
+        android:id="@+id/btn_camera_preview"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="CameraSurface"
+        android:text="CameraPreview"
         android:textAllCaps="false"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
@@ -50,11 +50,11 @@
         android:id="@+id/btn_media_mp4"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="MediaMp4"
+        android:text="MediaMuxer/MediaExtractor"
         android:textAllCaps="false"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btn_camera_surface" />
+        app:layout_constraintTop_toBottomOf="@id/btn_camera_preview" />
 
     <Button
         android:id="@+id/btn_media_codec"

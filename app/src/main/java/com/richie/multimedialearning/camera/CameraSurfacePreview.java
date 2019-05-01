@@ -13,7 +13,6 @@ import com.richie.multimedialearning.utils.CameraUtils;
 import com.richie.multimedialearning.utils.ThreadHelper;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 /**
  * @author Richie on 2018.08.01
@@ -50,10 +49,11 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-        logger.debug("surfaceCreated");
+        logger.info("surfaceCreated");
         ThreadHelper.getInstance().runOnHandlerThread(new Runnable() {
             @Override
             public void run() {
+                // 异步打开相机，创建预览画面
                 openCamera();
                 startPreviewDisplay();
             }
@@ -62,12 +62,12 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-        logger.debug("surfaceChanged: format:{}, width:{}, height:{}", format, width, height);
+        logger.info("surfaceChanged: format:{}, width:{}, height:{}", format, width, height);
     }
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-        logger.debug("surfaceDestroyed");
+        logger.info("surfaceDestroyed");
         ThreadHelper.getInstance().runOnHandlerThread(new Runnable() {
             @Override
             public void run() {
@@ -77,6 +77,7 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
     }
 
     private void openCamera() {
+        logger.debug("openCamera");
         Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
         int number = Camera.getNumberOfCameras();
 
@@ -87,11 +88,9 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
                     mCamera = Camera.open(i);
                     CameraUtils.setCameraDisplayOrientation(mActivity, i, mCamera);
                     Camera.Parameters params = mCamera.getParameters();
-                    int[] size = CameraUtils.choosePreviewSize(params, MAX_PREVIEW_WIDTH, MAX_PREVIEW_HEIGHT);
-                    logger.info("size:{}", Arrays.toString(size));
-                    //params.setPreviewSize(size[0], size[1]);
+                    CameraUtils.choosePreviewSize(params, MAX_PREVIEW_WIDTH, MAX_PREVIEW_HEIGHT);
                     mCamera.setParameters(params);
-                    logger.info("camera opened");
+                    logger.info("Camera opened");
                 } catch (Exception e) {
                     logger.error("openCamera error", e);
                 }
@@ -103,12 +102,13 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
     private void startPreviewDisplay() {
         if (mCamera != null) {
             try {
-                //mCamera.setPreviewCallback(new Camera.PreviewCallback() {
-                //    @Override
-                //    public void onPreviewFrame(byte[] data, Camera camera) {
-                //
-                //    }
-                //});
+                // 设置 NV21 数据回调
+                mCamera.setPreviewCallback(new Camera.PreviewCallback() {
+                    @Override
+                    public void onPreviewFrame(byte[] data, Camera camera) {
+                        logger.verbose("onPreviewFrame data length:{}", data != null ? data.length : 0);
+                    }
+                });
                 mCamera.setPreviewDisplay(mSurfaceHolder);
                 mCamera.startPreview();
             } catch (IOException e) {
@@ -118,6 +118,7 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
     }
 
     private void releaseCamera() {
+        logger.debug("releaseCamera");
         if (mCamera != null) {
             try {
                 mCamera.stopPreview();

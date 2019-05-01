@@ -30,7 +30,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.btn_surface_view).setOnClickListener(this);
         findViewById(R.id.btn_audio_record).setOnClickListener(this);
         findViewById(R.id.btn_audio_track).setOnClickListener(this);
-        findViewById(R.id.btn_camera_surface).setOnClickListener(this);
+        findViewById(R.id.btn_camera_preview).setOnClickListener(this);
         findViewById(R.id.btn_media_mp4).setOnClickListener(this);
         findViewById(R.id.btn_media_codec).setOnClickListener(this);
 
@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.btn_audio_track:
                 intent = new Intent(this, AudioTrackActivity.class);
                 break;
-            case R.id.btn_camera_surface: {
+            case R.id.btn_camera_preview: {
                 String[] colors = {"SurfaceView Camera", "TextureView Camera", "SurfaceView Camera2"};
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
                 builder.setTitle("Pick a preview type");

@@ -26,7 +26,7 @@ import java.util.UUID;
 /**
  * @author Richie on 2018.10.16
  */
-public class FileUtils {
+public final class FileUtils {
     private static final String TAG = "FileUtils";
 
     private FileUtils() {
@@ -69,7 +69,7 @@ public class FileUtils {
                 fileTree.add(dirName);
             }
         } catch (IOException e) {
-            Log.e(TAG, "listAssetsRecursively: ", e);
+            Log.e(TAG, "listAssetsRecursively: " + dirName, e);
         }
     }
 

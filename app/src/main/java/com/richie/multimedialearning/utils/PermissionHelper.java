@@ -31,7 +31,7 @@ import android.widget.Toast;
  * Helper class for handling dangerous permissions for Android API level >= 23 which
  * requires user consent at runtime to access the camera.
  */
-class PermissionHelper {
+public final class PermissionHelper {
     public static final int RC_PERMISSION_REQUEST = 1024;
 
     public static boolean hasCameraPermission(Activity activity) {

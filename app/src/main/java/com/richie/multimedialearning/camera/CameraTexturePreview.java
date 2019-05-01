@@ -47,11 +47,12 @@ public class CameraTexturePreview extends TextureView implements TextureView.Sur
 
     @Override
     public void onSurfaceTextureAvailable(final SurfaceTexture surface, int width, int height) {
-        logger.debug("onSurfaceTextureAvailable. width:{}, height:{}", width, height);
+        logger.info("onSurfaceTextureAvailable. width:{}, height:{}", width, height);
         ThreadHelper.getInstance().runOnHandlerThread(new Runnable() {
             @Override
             public void run() {
                 openCamera();
+                // 异步打开相机，创建预览画面
                 startPreviewDisplay(surface);
             }
         });
@@ -59,13 +60,13 @@ public class CameraTexturePreview extends TextureView implements TextureView.Sur
 
     @Override
     public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
-        logger.debug("onSurfaceTextureSizeChanged. width:{}, height:{}", width, height);
+        logger.info("onSurfaceTextureSizeChanged. width:{}, height:{}", width, height);
         // Ignored, Camera does all the work for us
     }
 
     @Override
     public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-        logger.debug("onSurfaceTextureDestroyed");
+        logger.info("onSurfaceTextureDestroyed");
         ThreadHelper.getInstance().runOnHandlerThread(new Runnable() {
             @Override
             public void run() {
@@ -81,6 +82,7 @@ public class CameraTexturePreview extends TextureView implements TextureView.Sur
     }
 
     private void openCamera() {
+        logger.debug("openCamera");
         Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
         int number = Camera.getNumberOfCameras();
         for (int i = 0; i < number; i++) {
@@ -103,6 +105,12 @@ public class CameraTexturePreview extends TextureView implements TextureView.Sur
     private void startPreviewDisplay(SurfaceTexture surfaceTexture) {
         if (mCamera != null) {
             try {
+                mCamera.setPreviewCallback(new Camera.PreviewCallback() {
+                    @Override
+                    public void onPreviewFrame(byte[] data, Camera camera) {
+                        logger.verbose("onPreviewFrame data length:{}", data != null ? data.length : 0);
+                    }
+                });
                 mCamera.setPreviewTexture(surfaceTexture);
                 mCamera.startPreview();
             } catch (IOException e) {
@@ -112,6 +120,7 @@ public class CameraTexturePreview extends TextureView implements TextureView.Sur
     }
 
     private void releaseCamera() {
+        logger.debug("releaseCamera");
         if (mCamera != null) {
             try {
                 mCamera.stopPreview();

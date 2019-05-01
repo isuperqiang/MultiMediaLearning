@@ -10,7 +10,7 @@ import java.io.InputStream;
 /**
  * @author Richie on 2018.09.16
  */
-public class BitmapUtils {
+public final class BitmapUtils {
 
     public static Bitmap decodeSampledBitmapFromFile(File file, int reqWidth, int reqHeight) {
 

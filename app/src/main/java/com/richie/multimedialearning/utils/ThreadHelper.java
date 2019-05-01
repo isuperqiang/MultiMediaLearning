@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Richie
  * 多线程工具类
  */
-public class ThreadHelper {
+public final class ThreadHelper {
     private final ILogger log = LoggerFactory.getLogger(ThreadHelper.class);
     private Handler mMainHandler;
     private ExecutorService mExecutorService;

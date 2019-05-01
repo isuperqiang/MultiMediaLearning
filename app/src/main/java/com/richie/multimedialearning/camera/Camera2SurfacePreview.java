@@ -11,7 +11,6 @@ import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
-import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.Build;
@@ -20,7 +19,6 @@ import android.os.HandlerThread;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.util.AttributeSet;
-import android.util.Size;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -33,6 +31,7 @@ import java.util.Arrays;
 /**
  * @author Richie on 2019.03.07
  * https://juejin.im/post/5a33a5106fb9a04525782db5
+ * 使用 Camera2/SurfaceView 预览
  */
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class Camera2SurfacePreview extends SurfaceView implements SurfaceHolder.Callback {
@@ -62,14 +61,32 @@ public class Camera2SurfacePreview extends SurfaceView implements SurfaceHolder.
         init();
     }
 
-    @Override
-    public void surfaceCreated(SurfaceHolder holder) {
-        logger.debug("surfaceCreated() called with: holder = [" + holder + "]");
-        HandlerThread handlerThread = new HandlerThread("camera2");
-        handlerThread.start();
-        mCallbackHandler = new Handler(handlerThread.getLooper());
-        checkCamera();
-        openCamera();
+    public static boolean hasCamera2(Context context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            return false;
+        }
+        try {
+            CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+            String[] idList = manager.getCameraIdList();
+            boolean notFull = true;
+            if (idList.length == 0) {
+                notFull = false;
+            } else {
+                for (String str : idList) {
+                    CameraCharacteristics characteristics = manager.getCameraCharacteristics(str);
+                    if (characteristics != null) {
+                        final int supportLevel = characteristics.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL);
+                        if (supportLevel == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY) {
+                            notFull = false;
+                            break;
+                        }
+                    }
+                }
+            }
+            return !notFull;
+        } catch (Exception exp) {
+            return false;
+        }
     }
 
     @Override
@@ -92,31 +109,15 @@ public class Camera2SurfacePreview extends SurfaceView implements SurfaceHolder.
         mSurfaceHolder.addCallback(this);
     }
 
-    private void checkCamera() {
-        CameraManager cameraManager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
-        try {
-            String[] cameraIdList = cameraManager.getCameraIdList();
-            for (String s : cameraIdList) {
-                CameraCharacteristics cameraCharacteristics = cameraManager.getCameraCharacteristics(s);
-                Integer lensFacing = cameraCharacteristics.get(CameraCharacteristics.LENS_FACING);
-                Integer sensorOrientation = cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
-                Integer supportedHardwareLevel = cameraCharacteristics.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL);
-                logger.debug("lensFacing:{}, sensorOrientation:{}, supportedHardwareLevel:{}",
-                        lensFacing, sensorOrientation, supportedHardwareLevel);
-                if (lensFacing != null && lensFacing == CameraCharacteristics.LENS_FACING_FRONT) {
-                    mCameraId = s;
-                    //break;
-                    StreamConfigurationMap map = cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-                    int[] outputFormats = map.getOutputFormats();
-                    Size[] outputSizes = map.getOutputSizes(SurfaceHolder.class);
-                    logger.debug("format:{}, size:{}", Arrays.toString(outputFormats), Arrays.toString(outputSizes));
-                    // size:[3264x2448, 1920x1920, 640x480, 320x240, 1280x720, 2048x1536, 1920x1080, 2448x2448, 3264x1840, 1536x864]
-                }
-            }
-            logger.debug("front camera available:{}", mCameraId);
-        } catch (Exception e) {
-            logger.error(e);
-        }
+    @Override
+    public void surfaceCreated(SurfaceHolder holder) {
+        boolean b = hasCamera2(mContext);
+        logger.debug("surfaceCreated() hasCamera2:{}", b);
+        HandlerThread handlerThread = new HandlerThread("camera2");
+        handlerThread.start();
+        mCallbackHandler = new Handler(handlerThread.getLooper());
+        checkCamera();
+        openCamera();
     }
 
     private void openCamera() {
@@ -173,8 +174,6 @@ public class Camera2SurfacePreview extends SurfaceView implements SurfaceHolder.
                     mCameraDevice = null;
                 }
             }, mCallbackHandler);
-
-            CameraCaptureSession.CaptureCallback captureCallback;
         } catch (Exception e) {
             logger.error(e);
         }
@@ -225,32 +224,29 @@ public class Camera2SurfacePreview extends SurfaceView implements SurfaceHolder.
         }
     }
 
-    public static boolean hasCamera2(Context mContext) {
-        if (mContext == null) {
-            return false;
-        }
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            return false;
-        }
+    private void checkCamera() {
+        CameraManager cameraManager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
         try {
-            CameraManager manager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
-            String[] idList = manager.getCameraIdList();
-            boolean notFull = true;
-            if (idList.length == 0) {
-                notFull = false;
-            } else {
-                for (final String str : idList) {
-                    final CameraCharacteristics characteristics = manager.getCameraCharacteristics(str);
-                    final int supportLevel = characteristics.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL);
-                    if (supportLevel == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY) {
-                        notFull = false;
-                        break;
-                    }
+            String[] cameraIdList = cameraManager.getCameraIdList();
+            for (String s : cameraIdList) {
+                CameraCharacteristics cameraCharacteristics = cameraManager.getCameraCharacteristics(s);
+                Integer lensFacing = cameraCharacteristics.get(CameraCharacteristics.LENS_FACING);
+                Integer sensorOrientation = cameraCharacteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
+                Integer supportedHardwareLevel = cameraCharacteristics.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL);
+                logger.debug("lensFacing:{}, sensorOrientation:{}, supportedHardwareLevel:{}",
+                        lensFacing, sensorOrientation, supportedHardwareLevel);
+                if (lensFacing != null && lensFacing == CameraCharacteristics.LENS_FACING_FRONT) {
+                    mCameraId = s;
+                    break;
+                    //StreamConfigurationMap map = cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+                    //int[] outputFormats = map.getOutputFormats();
+                    //Size[] outputSizes = map.getOutputSizes(SurfaceHolder.class);
+                    //logger.debug("format:{}, size:{}", Arrays.toString(outputFormats), Arrays.toString(outputSizes));
                 }
             }
-            return notFull;
-        } catch (Exception exp) {
-            return false;
+            logger.debug("front camera available:{}", mCameraId);
+        } catch (Exception e) {
+            logger.error(e);
         }
     }
 }
