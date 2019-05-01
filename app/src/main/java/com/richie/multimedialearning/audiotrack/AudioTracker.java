@@ -24,13 +24,12 @@ import java.util.concurrent.Executors;
  */
 public class AudioTracker {
     private static final String TAG = "AudioTracker";
-    // 44100是目前的标准，但是某些设备仍然支持22050，16000，11025
-    // 采样频率一般共分为22.05KHz、44.1KHz、48KHz三个等级
-    private final static int AUDIO_SAMPLE_RATE = 44100;
-    // 单声道
-    private final static int AUDIO_CHANNEL = AudioFormat.CHANNEL_OUT_MONO;
-    // 编码
-    private final static int AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
+    // 采样率 44100Hz，所有设备都支持
+    private final static int SAMPLE_RATE = 44100;
+    // 单声道，所有设备都支持
+    private final static int CHANNEL = AudioFormat.CHANNEL_OUT_MONO;
+    // 位深 16 位，所有设备都支持
+    private final static int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
     // 缓冲区字节大小
     private int mBufferSizeInBytes = 0;
     // 播放对象
@@ -39,7 +38,7 @@ public class AudioTracker {
     private String mFilePath;
     // 状态
     private volatile Status mStatus = Status.STATUS_NO_READY;
-    // 线程池
+    // 单任务线程池
     private ExecutorService mExecutorService = Executors.newSingleThreadExecutor();
 
     private Handler mMainHandler = new Handler(Looper.getMainLooper());
@@ -50,24 +49,29 @@ public class AudioTracker {
         mContext = context;
     }
 
-    public void createAudioTrack(String filePath) {
+    public void createAudioTrack(String filePath) throws IllegalStateException {
         mFilePath = filePath;
-        mBufferSizeInBytes = AudioTrack.getMinBufferSize(AUDIO_SAMPLE_RATE, AUDIO_CHANNEL, AUDIO_ENCODING);
+        mBufferSizeInBytes = AudioTrack.getMinBufferSize(SAMPLE_RATE, CHANNEL, AUDIO_FORMAT);
+        if (mBufferSizeInBytes <= 0) {
+            throw new IllegalStateException("AudioTrack is not available " + mBufferSizeInBytes);
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             mAudioTrack = new AudioTrack.Builder()
                     .setAudioAttributes(new AudioAttributes.Builder()
                             .setUsage(AudioAttributes.USAGE_MEDIA)
                             .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                            .setLegacyStreamType(AudioManager.STREAM_MUSIC)
                             .build())
                     .setAudioFormat(new AudioFormat.Builder()
-                            .setEncoding(AUDIO_ENCODING)
-                            .setSampleRate(AUDIO_SAMPLE_RATE)
-                            .setChannelMask(AUDIO_CHANNEL)
+                            .setEncoding(AUDIO_FORMAT)
+                            .setSampleRate(SAMPLE_RATE)
+                            .setChannelMask(CHANNEL)
                             .build())
+                    .setTransferMode(AudioTrack.MODE_STREAM)
                     .setBufferSizeInBytes(mBufferSizeInBytes)
                     .build();
         } else {
-            mAudioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, AUDIO_SAMPLE_RATE, AUDIO_CHANNEL, AUDIO_ENCODING,
+            mAudioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, SAMPLE_RATE, CHANNEL, AUDIO_FORMAT,
                     mBufferSizeInBytes, AudioTrack.MODE_STREAM);
         }
         mStatus = Status.STATUS_READY;
@@ -76,7 +80,7 @@ public class AudioTracker {
     /**
      * 开始播放
      */
-    public void start() {
+    public void start() throws IllegalStateException {
         if (mStatus == Status.STATUS_NO_READY || mAudioTrack == null) {
             throw new IllegalStateException("播放器尚未初始化");
         }
@@ -88,7 +92,7 @@ public class AudioTracker {
             @Override
             public void run() {
                 try {
-                    writeAudioData();
+                    playAudioData();
                 } catch (IOException e) {
                     Log.e(TAG, e.getMessage());
                     mMainHandler.post(new Runnable() {
@@ -103,7 +107,7 @@ public class AudioTracker {
         mStatus = Status.STATUS_START;
     }
 
-    private void writeAudioData() throws IOException {
+    private void playAudioData() throws IOException {
         InputStream dis = null;
         try {
             mMainHandler.post(new Runnable() {
@@ -112,8 +116,7 @@ public class AudioTracker {
                     Toast.makeText(mContext, "播放开始", Toast.LENGTH_SHORT).show();
                 }
             });
-            InputStream fis = new FileInputStream(mFilePath);
-            dis = new DataInputStream(new BufferedInputStream(fis));
+            dis = new DataInputStream(new BufferedInputStream(new FileInputStream(mFilePath)));
             byte[] bytes = new byte[mBufferSizeInBytes];
             int length;
             mAudioTrack.play();
@@ -134,7 +137,7 @@ public class AudioTracker {
         }
     }
 
-    public void stop() {
+    public void stop() throws IllegalStateException {
         Log.d(TAG, "===stop===");
         if (mStatus == Status.STATUS_NO_READY || mStatus == Status.STATUS_READY) {
             throw new IllegalStateException("播放尚未开始");

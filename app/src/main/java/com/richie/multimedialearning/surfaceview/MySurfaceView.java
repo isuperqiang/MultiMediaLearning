@@ -50,13 +50,13 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-        logger.debug("onSurfaceCreated");
-        mThread = new Thread(this, "Renderer");
+        logger.info("onSurfaceCreated");
+        mThread = new Thread(this, "Surface-Renderer");
     }
 
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-        logger.debug("onSurfaceChanged. format:{}, width:{}, height:{}", format, width, height);
+        logger.info("onSurfaceChanged. format:{}, width:{}, height:{}", format, width, height);
         mBitmap = BitmapUtils.decodeSampledBitmapFromFile(new File(getContext().getExternalFilesDir(null),
                 "template.jpg"), width, height);
         mIsDrawing = true;
@@ -65,9 +65,8 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
 
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
-        logger.debug("onSurfaceDestroyed");
+        logger.info("onSurfaceDestroyed");
         mIsDrawing = false;
-        mSurfaceHolder.removeCallback(this);
         mThread.interrupt();
     }
 

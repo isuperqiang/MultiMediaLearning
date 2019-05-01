@@ -145,11 +145,7 @@ public class FileUtils {
     }
 
     public static String getPcmFilePath(Context context, String name) {
-        File fileDir = getFileDir(context);
-        File pcmFileDir = new File(fileDir, "pcm");
-        if (!pcmFileDir.exists()) {
-            pcmFileDir.mkdirs();
-        }
+        File pcmFileDir = getPcmFileDir(context);
         File pcmFile = new File(pcmFileDir, name + ".pcm");
         return pcmFile.getAbsolutePath();
     }

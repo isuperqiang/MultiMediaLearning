@@ -7,8 +7,10 @@ import android.view.View;
 import com.richie.multimedialearning.R;
 import com.richie.multimedialearning.utils.FileUtils;
 
+import java.io.File;
+
 /**
- * Audio track
+ * 使用 AudioTrack 播放音频
  */
 public class AudioTrackActivity extends AppCompatActivity implements View.OnClickListener {
     private AudioTracker mAudioTracker;
@@ -32,13 +34,17 @@ public class AudioTrackActivity extends AppCompatActivity implements View.OnClic
         switch (v.getId()) {
             case R.id.btn_start_play_audio: {
                 mAudioTracker = new AudioTracker(this);
-                String path = FileUtils.getPcmFilePath(this, "hello");
-                mAudioTracker.createAudioTrack(path);
+                File pcmFile = new File(FileUtils.getExternalAssetsDir(this), "test.pcm");
+                mAudioTracker.createAudioTrack(pcmFile.getAbsolutePath());
                 mAudioTracker.start();
             }
             break;
             case R.id.btn_stop_play_audio: {
-                mAudioTracker.stop();
+                try {
+                    mAudioTracker.stop();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
             break;
             default:

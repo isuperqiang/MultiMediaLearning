@@ -4,12 +4,10 @@ import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.richie.multimedialearning.utils.FileUtils;
+import com.richie.multimedialearning.utils.wav.PcmToWav;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -24,18 +22,17 @@ import java.util.concurrent.Executors;
  */
 public class AudioRecorder {
     private static final String TAG = "AudioRecorder";
-    // 音频输入-麦克风
-    private final static int AUDIO_INPUT = MediaRecorder.AudioSource.MIC;
-    // 44100是目前的标准，但是某些设备仍然支持22050，16000，11025
-    // 采样频率一般共分为22.05KHz、44.1KHz、48KHz三个等级
-    private final static int AUDIO_SAMPLE_RATE = 44100;
-    // 单声道
-    private final static int AUDIO_CHANNEL = AudioFormat.CHANNEL_IN_MONO;
-    // 编码
-    private final static int AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
+    // 输入源 麦克风
+    private final static int AUDIO_SOURCE = MediaRecorder.AudioSource.MIC;
+    // 采样率 44100Hz，所有设备都支持
+    private final static int SAMPLE_RATE = 44100;
+    // 通道 单声道，所有设备都支持
+    private final static int CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO;
+    // 位深 16 位，所有设备都支持
+    private final static int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
     // 缓冲区字节大小
     private int mBufferSizeInBytes;
-    // 线程池
+    // 单任务线程池
     private ExecutorService mExecutorService = Executors.newSingleThreadExecutor();
     // 录音对象
     private AudioRecord mAudioRecord;
@@ -45,8 +42,6 @@ public class AudioRecorder {
     private String mPcmFileName;
     // 录音监听
     private RecordStreamListener mRecordStreamListener;
-
-    private Handler mMainHandler = new Handler(Looper.getMainLooper());
 
     private Context mContext;
 
@@ -60,7 +55,7 @@ public class AudioRecorder {
      * @param fileName 文件名
      */
     public void createDefaultAudio(String fileName) {
-        createAudio(fileName, AUDIO_INPUT, AUDIO_SAMPLE_RATE, AUDIO_CHANNEL, AUDIO_ENCODING);
+        createAudio(fileName, AUDIO_SOURCE, SAMPLE_RATE, CHANNEL_CONFIG, AUDIO_FORMAT);
     }
 
     /**
@@ -72,11 +67,11 @@ public class AudioRecorder {
      * @param channelConfig
      * @param audioFormat
      */
-    public void createAudio(String fileName, int audioSource, int sampleRateInHz, int channelConfig, int audioFormat) {
+    public void createAudio(String fileName, int audioSource, int sampleRateInHz, int channelConfig, int audioFormat) throws IllegalStateException {
         // 获得缓冲区字节大小
         mBufferSizeInBytes = AudioRecord.getMinBufferSize(sampleRateInHz, channelConfig, audioFormat);
-        if (mBufferSizeInBytes == AudioRecord.ERROR_BAD_VALUE || mBufferSizeInBytes == AudioRecord.ERROR) {
-            throw new RuntimeException("AudioRecord is not available");
+        if (mBufferSizeInBytes <= 0) {
+            throw new IllegalStateException("AudioRecord is not available " + mBufferSizeInBytes);
         }
 
         mAudioRecord = new AudioRecord(audioSource, sampleRateInHz, channelConfig, audioFormat, mBufferSizeInBytes);
@@ -89,7 +84,7 @@ public class AudioRecorder {
     /**
      * 开始录音
      */
-    public void startRecord() {
+    public void startRecord() throws IllegalStateException {
         if (mStatus == Status.STATUS_NO_READY || mAudioRecord == null) {
             throw new IllegalStateException("录音尚未初始化");
         }
@@ -107,7 +102,7 @@ public class AudioRecorder {
             @Override
             public void run() {
                 try {
-                    writeDataToFile();
+                    writeAudioDataToFile();
                 } catch (IOException e) {
                     Log.e(TAG, "writeDataToFile: ", e);
                 }
@@ -118,7 +113,7 @@ public class AudioRecorder {
     /**
      * 停止录音
      */
-    public void stopRecord() {
+    public void stopRecord() throws IllegalStateException {
         Log.d(TAG, "===stopRecord===");
         if (mStatus == Status.STATUS_NO_READY || mStatus == Status.STATUS_READY) {
             throw new IllegalStateException("录音尚未开始");
@@ -161,7 +156,7 @@ public class AudioRecorder {
     /**
      * 将音频信息写入文件
      */
-    private void writeDataToFile() throws IOException {
+    private void writeAudioDataToFile() throws IOException {
         String pcmFilePath = FileUtils.getPcmFilePath(mContext, mPcmFileName);
         File file = new File(pcmFilePath);
         if (file.exists()) {
@@ -173,16 +168,17 @@ public class AudioRecorder {
             byte[] audioData = new byte[mBufferSizeInBytes];
             while (mStatus == Status.STATUS_START) {
                 int readSize = mAudioRecord.read(audioData, 0, mBufferSizeInBytes);
-                if (AudioRecord.ERROR_INVALID_OPERATION != readSize && AudioRecord.ERROR_BAD_VALUE != readSize
-                        && AudioRecord.ERROR_DEAD_OBJECT != readSize && AudioRecord.ERROR != readSize) {
+                if (readSize > 0) {
                     try {
                         bos.write(audioData, 0, readSize);
                         if (mRecordStreamListener != null) {
                             mRecordStreamListener.onRecording(audioData, 0, readSize);
                         }
                     } catch (IOException e) {
-                        Log.e(TAG, e.getMessage());
+                        Log.e(TAG, "writeAudioDataToFile", e);
                     }
+                } else {
+                    Log.w(TAG, "writeAudioDataToFile readSize: " + readSize);
                 }
             }
             bos.flush();
@@ -203,18 +199,13 @@ public class AudioRecorder {
         mExecutorService.execute(new Runnable() {
             @Override
             public void run() {
-                if (PcmToWav.makePCMFileToWAVFile(FileUtils.getPcmFilePath(mContext, mPcmFileName), FileUtils.getWavFilePath(mContext, mPcmFileName), false)) {
+                String wavFilePath = FileUtils.getWavFilePath(mContext, mPcmFileName);
+                if (PcmToWav.makePCMFileToWAVFile(FileUtils.getPcmFilePath(mContext, mPcmFileName), wavFilePath, false)) {
                     //操作成功
-                    mMainHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(mContext, "保存wav文件成功", Toast.LENGTH_SHORT).show();
-                        }
-                    });
+                    Log.i(TAG, "保存wav文件成功 " + wavFilePath);
                 } else {
                     //操作失败
                     Log.e(TAG, "makePCMFileToWAVFile fail");
-                    throw new IllegalStateException("makePCMFileToWAVFile fail");
                 }
             }
         });

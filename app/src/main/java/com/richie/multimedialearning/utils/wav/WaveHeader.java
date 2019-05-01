@@ -1,4 +1,4 @@
-package com.richie.multimedialearning.audiorecord;
+package com.richie.multimedialearning.utils.wav;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

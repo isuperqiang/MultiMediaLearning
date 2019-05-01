@@ -6,7 +6,7 @@ import android.support.v7.app.AppCompatActivity;
 import com.richie.multimedialearning.R;
 
 /**
- * SurfaceView
+ * 使用 SurfaceView 绘制一张图片
  */
 public class SurfaceActivity extends AppCompatActivity {
 
