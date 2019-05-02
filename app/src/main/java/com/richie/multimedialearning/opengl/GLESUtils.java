@@ -5,10 +5,9 @@ import android.content.Context;
 import android.content.pm.ConfigurationInfo;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
+import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
-
-import com.richie.easylog.ILogger;
-import com.richie.easylog.LoggerFactory;
+import android.util.Log;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -18,6 +17,10 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
+import javax.microedition.khronos.egl.EGL10;
+import javax.microedition.khronos.egl.EGLConfig;
+import javax.microedition.khronos.egl.EGLContext;
+import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.opengles.GL10;
 
 public final class GLESUtils {
@@ -26,7 +29,7 @@ public final class GLESUtils {
      */
     public static final float[] IDENTITY_MATRIX;
     public static final int SIZEOF_FLOAT = 4;
-    private static ILogger logger = LoggerFactory.getLogger("GLESUtils");
+    private static final String TAG = "GLESUtils";
 
     static {
         IDENTITY_MATRIX = new float[16];
@@ -34,6 +37,29 @@ public final class GLESUtils {
     }
 
     private GLESUtils() {
+    }
+
+    /**
+     * create a vertex shader type (GLES20.GL_VERTEX_SHADER)
+     * or a fragment shader type (GLES20.GL_FRAGMENT_SHADER)
+     *
+     * @param type
+     * @param shaderCode
+     * @return
+     */
+    public static int createShader(int type, String shaderCode) {
+        int shader = GLES20.glCreateShader(type);
+        GLES20.glShaderSource(shader, shaderCode);
+        // add the source code to the shader and compile it
+        GLES20.glCompileShader(shader);
+        int[] compileStatus = new int[1];
+        GLES20.glGetShaderiv(shader, GLES20.GL_COMPILE_STATUS, compileStatus, 0);
+        if (compileStatus[0] == 0) {
+            Log.e(TAG, "compile shader: " + type + ", error: " + GLES20.glGetShaderInfoLog(shader));
+            GLES20.glDeleteShader(shader);
+            shader = 0;
+        }
+        return shader;
     }
 
     public static int createVertexShader(String shaderCode) {
@@ -44,32 +70,14 @@ public final class GLESUtils {
         return createShader(GLES20.GL_FRAGMENT_SHADER, shaderCode);
     }
 
-    // 着色器包含了OpenGL Shading Language（GLSL）代码，它必须先被编译然后才能在OpenGL环境中使用。
-    public static int createShader(int type, String shaderCode) {
-        // create a vertex shader type (GLES20.GL_VERTEX_SHADER)
-        // or a fragment shader type (GLES20.GL_FRAGMENT_SHADER)
-        int shader = GLES20.glCreateShader(type);
-        GLES20.glShaderSource(shader, shaderCode);
-        // add the source code to the shader and compile it
-        GLES20.glCompileShader(shader);
-        int[] compileStatus = new int[1];
-        GLES20.glGetShaderiv(shader, GLES20.GL_COMPILE_STATUS, compileStatus, 0);
-        if (compileStatus[0] == 0) {
-            logger.error("Could not compile shader:{}, error:{}", type, GLES20.glGetShaderInfoLog(shader));
-            GLES20.glDeleteShader(shader);
-            shader = 0;
-        }
-        return shader;
-    }
-
     public static int createProgram(int vertexShader, int fragmentShader) {
         if (vertexShader == 0 || fragmentShader == 0) {
-            logger.error("shader can't be 0!");
+            Log.e(TAG, "shader can't be 0!");
         }
         int program = GLES20.glCreateProgram();
         checkGlError("glCreateProgram");
         if (program == 0) {
-            logger.error("program can't be 0!");
+            Log.e(TAG, "program can't be 0!");
             return 0;
         }
         GLES20.glAttachShader(program, vertexShader);
@@ -80,7 +88,7 @@ public final class GLESUtils {
         int[] linkStatus = new int[1];
         GLES20.glGetProgramiv(program, GLES20.GL_LINK_STATUS, linkStatus, 0);
         if (linkStatus[0] != GLES20.GL_TRUE) {
-            logger.error("link program error. {}", GLES20.glGetProgramInfoLog(program));
+            Log.e(TAG, "link program error: " + GLES20.glGetProgramInfoLog(program));
             GLES20.glDeleteProgram(program);
             program = 0;
         }
@@ -91,7 +99,28 @@ public final class GLESUtils {
         int error = GLES20.glGetError();
         if (error != GLES20.GL_NO_ERROR) {
             String msg = op + ": glError 0x" + Integer.toHexString(error);
-            logger.error("CheckGlError: {}", msg);
+            Log.e(TAG, "checkGlError: " + msg);
+        }
+    }
+
+    public static class ContextFactory implements GLSurfaceView.EGLContextFactory {
+        private static int EGL_CONTEXT_CLIENT_VERSION = 0x3098;
+
+        @Override
+        public EGLContext createContext(EGL10 egl, EGLDisplay display, EGLConfig eglConfig) {
+            double glVersion = 3.0;
+            Log.d(TAG, "creating OpenGL ES " + glVersion + " context");
+            int[] attrib_list = {EGL_CONTEXT_CLIENT_VERSION, (int) glVersion,
+                    EGL10.EGL_NONE};
+            // attempt to create a OpenGL ES 3.0 context
+            EGLContext context = egl.eglCreateContext(
+                    display, eglConfig, EGL10.EGL_NO_CONTEXT, attrib_list);
+            return context; // returns null if 3.0 is not supported;
+        }
+
+        @Override
+        public void destroyContext(EGL10 egl, EGLDisplay display, EGLContext context) {
+
         }
     }
 

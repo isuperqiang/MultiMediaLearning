@@ -50,7 +50,7 @@ public class ImageRenderer implements GLSurfaceView.Renderer {
     private final FloatBuffer mTextureBuffer;
     private final float[] mProjectionMatrix = new float[16];
     private final float[] mViewMatrix = new float[16];
-    private float[] mMVPMatrix = new float[16];
+    private float[] mMvpMatrix = new float[16];
     private int mProgram;
     private int mMvpMatrixHandle;
     private int mPositionHandle;
@@ -77,8 +77,6 @@ public class ImageRenderer implements GLSurfaceView.Renderer {
         int texUnitHandle = GLES20.glGetAttribLocation(mProgram, "uTextureUnit");
 
         // 加载图片并且保存在 OpenGL 纹理系统中
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inScaled = false;
         Bitmap bitmap = BitmapFactory.decodeFile(mImagePath);
         mBitmapWidth = bitmap.getWidth();
         mBitmapHeight = bitmap.getHeight();
@@ -104,40 +102,16 @@ public class ImageRenderer implements GLSurfaceView.Renderer {
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         GLES20.glViewport(0, 0, width, height);
-
-        //float sWH = (float) mBitmapWidth / mBitmapHeight;
-        //float sWidthHeight = (float) width / height;
-        //if (width > height) {
-        //    // landscape
-        //    if (sWH > sWidthHeight) {
-        //        // 正交投影
-        //        Matrix.orthoM(mProjectionMatrix, 0, -sWidthHeight * sWH, sWidthHeight * sWH, -1, 1, 3, 5);
-        //    } else {
-        //        Matrix.orthoM(mProjectionMatrix, 0, -sWidthHeight / sWH, sWidthHeight / sWH, -1, 1, 3, 5);
-        //    }
-        //} else {
-        //    // portrait or square
-        //    if (sWH > sWidthHeight) {
-        //        Matrix.orthoM(mProjectionMatrix, 0, -1, 1, -1 / sWidthHeight * sWH, 1 / sWidthHeight * sWH, 3, 5);
-        //    } else {
-        //        Matrix.orthoM(mProjectionMatrix, 0, -1, 1, -sWH / sWidthHeight, sWH / sWidthHeight, 3, 5);
-        //    }
-        //}
-        ////设置相机位置
-        //Matrix.setLookAtM(mViewMatrix, 0, 0, 0, 5.0f, 0f, 0f, 0f, 0f, 1.0f, 0.0f);
-        ////计算变换矩阵
-        //Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mViewMatrix, 0);
-
         // 或者直接使用
-        mMVPMatrix = GLESUtils.changeMvpMatrixInside(width, height, mBitmapWidth, mBitmapHeight);
+        mMvpMatrix = GLESUtils.changeMvpMatrixInside(width, height, mBitmapWidth, mBitmapHeight);
     }
 
     @Override
     public void onDrawFrame(GL10 gl) {
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
         GLES20.glUseProgram(mProgram);
         // Enable a handle to the triangle vertices
-        GLES20.glUniformMatrix4fv(mMvpMatrixHandle, 1, false, mMVPMatrix, 0);
+        GLES20.glUniformMatrix4fv(mMvpMatrixHandle, 1, false, mMvpMatrix, 0);
 
         // 传入顶点坐标
         GLES20.glEnableVertexAttribArray(mPositionHandle);
