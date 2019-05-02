@@ -18,9 +18,9 @@
         android:name=".MultiMediaApp"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
         android:resizeableActivity="false"
         android:supportsRtl="false"
-        android:label="@string/app_name"
         android:theme="@style/AppTheme">
         <activity
             android:name=".codec.CodecActivity"
@@ -33,7 +33,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".surfaceview.SurfaceActivity"
+            android:name=".surface.SurfaceActivity"
             android:theme="@style/Theme.AppCompat.NoActionBar" />
         <activity android:name=".audiorecord.AudioRecordActivity" />
         <activity android:name=".audiotrack.AudioTrackActivity" />
@@ -43,6 +43,9 @@
         <activity android:name=".mp4.MediaMp4Activity" />
         <activity
             android:name=".codec.MediaCodecActivity"
+            android:theme="@style/Theme.AppCompat.NoActionBar" />
+        <activity
+            android:name=".opengl.OpenGLActivity"
             android:theme="@style/Theme.AppCompat.NoActionBar" />
     </application>
 

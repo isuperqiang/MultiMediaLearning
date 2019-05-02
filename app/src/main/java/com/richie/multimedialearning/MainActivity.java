@@ -16,7 +16,8 @@ import com.richie.multimedialearning.audiotrack.AudioTrackActivity;
 import com.richie.multimedialearning.camera.CameraPreviewActivity;
 import com.richie.multimedialearning.codec.CodecActivity;
 import com.richie.multimedialearning.mp4.MediaMp4Activity;
-import com.richie.multimedialearning.surfaceview.SurfaceActivity;
+import com.richie.multimedialearning.opengl.OpenGLActivity;
+import com.richie.multimedialearning.surface.SurfaceActivity;
 
 /**
  * Main 主界面
@@ -33,6 +34,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.btn_camera_preview).setOnClickListener(this);
         findViewById(R.id.btn_media_mp4).setOnClickListener(this);
         findViewById(R.id.btn_media_codec).setOnClickListener(this);
+        findViewById(R.id.btn_opengles).setOnClickListener(this);
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
                 || ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
@@ -80,13 +82,37 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 });
                 builder.show();
             }
-                break;
+            break;
             case R.id.btn_media_mp4:
                 intent = new Intent(this, MediaMp4Activity.class);
                 break;
             case R.id.btn_media_codec:
                 intent = new Intent(this, CodecActivity.class);
                 break;
+            case R.id.btn_opengles: {
+                String[] types = {"Triangle", "Image"};
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle("Pick a draw type");
+                builder.setItems(types, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        // the user clicked on types[which]
+                        int drawType;
+                        if (which == 0) {
+                            drawType = OpenGLActivity.TYPE_TRIANGLE;
+                        } else if (which == 1) {
+                            drawType = OpenGLActivity.TYPE_IMAGE;
+                        } else {
+                            drawType = OpenGLActivity.TYPE_IMAGE;
+                        }
+                        Intent intent = new Intent(MainActivity.this, OpenGLActivity.class);
+                        intent.putExtra(OpenGLActivity.TYPE, drawType);
+                        startActivity(intent);
+                    }
+                });
+                builder.show();
+            }
+            break;
             default:
         }
         if (intent != null) {

@@ -1,4 +1,4 @@
-package com.richie.multimedialearning.surfaceview;
+package com.richie.multimedialearning.surface;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;

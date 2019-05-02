@@ -186,6 +186,8 @@ public class MediaMp4Activity extends AppCompatActivity implements View.OnClickL
             if (mediaFormat == null || audioIndex < 0) {
                 return;
             }
+            // MediaFormat 封装了媒体数据（音频，视频，字幕）格式的信息，所有信息都以键值对形式表示。
+            // MediaFormat 中定义的 key 对于不同媒体数据并不是全部通用的，某些 key 只适用于特定媒体数据。
             // 最大缓冲区字节数
             int maxInputSize = mediaFormat.getInteger(MediaFormat.KEY_MAX_INPUT_SIZE);
             // 格式

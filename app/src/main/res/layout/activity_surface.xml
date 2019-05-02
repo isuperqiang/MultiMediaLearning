@@ -3,9 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".surfaceview.SurfaceActivity">
+    tools:context=".surface.SurfaceActivity">
 
-    <com.richie.multimedialearning.surfaceview.MySurfaceView
+    <com.richie.multimedialearning.surface.MySurfaceView
         android:id="@+id/surface_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />

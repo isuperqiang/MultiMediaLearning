@@ -1,4 +1,4 @@
-package com.richie.multimedialearning.surfaceview;
+package com.richie.multimedialearning.surface;
 
 import android.content.Context;
 import android.graphics.Bitmap;
