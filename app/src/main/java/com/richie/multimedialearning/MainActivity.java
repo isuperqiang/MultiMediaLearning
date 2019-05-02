@@ -60,7 +60,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.btn_camera_preview: {
                 String[] colors = {"SurfaceView Camera", "TextureView Camera", "SurfaceView Camera2"};
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setTitle("Pick a preview type");
+                builder.setTitle("Pick preview type");
                 builder.setItems(colors, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
@@ -92,7 +92,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.btn_opengles: {
                 String[] types = {"Triangle", "Image"};
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setTitle("Pick a draw type");
+                builder.setTitle("Pick draw type");
                 builder.setItems(types, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {

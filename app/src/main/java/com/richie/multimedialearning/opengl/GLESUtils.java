@@ -3,9 +3,11 @@ package com.richie.multimedialearning.opengl;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.ConfigurationInfo;
+import android.graphics.Bitmap;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.opengl.GLUtils;
 import android.opengl.Matrix;
 import android.util.Log;
 
@@ -228,6 +230,41 @@ public final class GLESUtils {
         return textureHandle;
     }
 
+    /**
+     * Creates a texture from bitmap.
+     *
+     * @param bmp bitmap data
+     * @return Handle to texture.
+     */
+    public static int createImageTexture(Bitmap bmp) {
+        if (bmp == null) {
+            return 0;
+        }
+        int[] textureHandles = new int[1];
+        GLES20.glGenTextures(1, textureHandles, 0);
+        checkGlError("glGenTextures");
+        if (textureHandles[0] == 0) {
+            Log.w(TAG, "Could not generate a new OpenGL texture object.");
+            return 0;
+        }
+
+        // Bind the texture handle to the 2D texture target.
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureHandles[0]);
+        // Configure min/mag filtering, i.e. what scaling method do we use if what we're rendering
+        // is smaller or larger than the source image.
+        // 设置缩小过滤为三线性过滤
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR_MIPMAP_LINEAR);
+        // 设置放大过滤为双线性过滤
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        // 加载纹理到 OpenGL，读入 Bitmap 定义的位图数据，并把它复制到当前绑定的纹理对象
+        // Load the data from the buffer into the texture handle.
+        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bmp, 0);
+        // 生成 MIP 贴图
+        GLES20.glGenerateMipmap(GLES20.GL_TEXTURE_2D);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+        return textureHandles[0];
+    }
+
     public static int createOESTexture() {
         int[] texture = new int[1];
         GLES20.glEnable(GLES20.GL_TEXTURE20);
@@ -242,6 +279,13 @@ public final class GLESUtils {
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
                 GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);
         return texture[0];
+    }
+
+
+    public static void deleteTextureId(int[] textureId) {
+        if (textureId != null && textureId.length > 0) {
+            GLES20.glDeleteTextures(textureId.length, textureId, 0);
+        }
     }
 
     public static boolean isSupportGL20(Context context) {
