@@ -1,57 +1,53 @@
 package com.richie.multimedialearning.utils.wav;
 
-import android.util.Log;
-
-import com.richie.multimedialearning.utils.FileUtils;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
- * Created by HXL on 16/8/11.
  * 将pcm文件转化为wav文件
  */
-public class PcmToWav {
-    private static final String TAG = "PcmToWav";
+public final class PcmToWav {
+
+    public static boolean makePcmFileToWavFile(String srcPcmPath, String destWavPath, boolean deletePcmFile) {
+        return makePcmFileToWavFile(srcPcmPath, destWavPath, deletePcmFile,
+                1, 44100, 16);
+    }
 
     /**
-     * 将一个pcm文件转化为wav文件
+     * 将pcm文件转化为wav文件
      *
-     * @param pcmPath         pcm文件路径
-     * @param destinationPath 目标文件路径(wav)
-     * @param deletePcmFile   是否删除源文件
+     * @param srcPcmPath    源 pcm 文件路径
+     * @param destWavPath   目标 wav 文件路径
+     * @param deletePcmFile 是否删除源文件
      * @return
      */
-    public static boolean makePCMFileToWAVFile(String pcmPath, String destinationPath, boolean deletePcmFile) {
-        File file = new File(pcmPath);
+    public static boolean makePcmFileToWavFile(String srcPcmPath, String destWavPath, boolean deletePcmFile,
+                                               int numChannels, int sampleRate, int bitPerSample) {
+        File file = new File(srcPcmPath);
         if (!file.exists()) {
             return false;
         }
+
         int totalSize = (int) file.length();
-        // 填入参数，比特率等等。这里用的是16位单声道 44.1 hz
         WaveHeader header = new WaveHeader();
-        // 长度字段 = 内容的大小（TOTAL_SIZE) +
-        // 头部字段的大小(不包括前面4字节的标识符RIFF以及fileLength本身的4字节)
-        header.fileLength = totalSize + (44 - 8);
-        header.fmthdrleth = 16;
-        header.bitsPerSample = 16;
-        header.channels = 1;
-        header.formatTag = 0x0001;
-        header.samplesPerSec = 44100;
-        header.blockAlign = (short) (header.channels * header.bitsPerSample / 8);
-        header.avgBytesPerSec = header.blockAlign * header.samplesPerSec;
-        header.dataHdrLeth = totalSize;
+        header.ChunkSize = totalSize + 36; // 该区块数据的长度（不包含ID和Size的长度）
+        header.AudioFormat = 1; // pcm 音频数据
+        header.NumChannels = (short) numChannels; // 单通道 1，双通道 2
+        header.SampleRate = sampleRate; // 采样率
+        header.BitsPerSample = bitPerSample; // 位宽 16 位
+        header.Subchunk2Size = totalSize; // 音频数据的长度
 
         byte[] h;
         try {
             h = header.getHeader();
-        } catch (IOException e1) {
-            Log.e(TAG, e1.getMessage());
+        } catch (IOException e) {
             return false;
         }
 
@@ -59,46 +55,116 @@ public class PcmToWav {
             return false;
         }
 
-        //先删除目标文件
-        File destFile = new File(destinationPath);
-        FileUtils.deleteFileRecursively(destFile);
+        File destFile = new File(destWavPath);
+        if (destFile.exists()) {
+            destFile.delete();
+        }
 
-        //合成所有的pcm文件的数据，写到目标文件
-        BufferedOutputStream ouStream = null;
         InputStream inStream = null;
+        OutputStream outStream = null;
+        byte[] buffer = new byte[8196];
         try {
-            byte buffer[] = new byte[1024 * 8]; // Length of All Files, Total Size
-            ouStream = new BufferedOutputStream(new FileOutputStream(destinationPath));
-            ouStream.write(h, 0, h.length);
+            outStream = new BufferedOutputStream(new FileOutputStream(destWavPath));
+            outStream.write(h);
             inStream = new BufferedInputStream(new FileInputStream(file));
             int size = inStream.read(buffer);
             while (size != -1) {
-                ouStream.write(buffer);
+                outStream.write(buffer, 0, size);
                 size = inStream.read(buffer);
             }
         } catch (IOException ioe) {
-            Log.e(TAG, ioe.getMessage());
             return false;
         } finally {
+            if (outStream != null) {
+                try {
+                    outStream.close();
+                } catch (IOException e) {
+                    // ignored
+                }
+            }
             if (inStream != null) {
                 try {
                     inStream.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            if (ouStream != null) {
-                try {
-                    ouStream.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                    // ignored
                 }
             }
         }
         if (deletePcmFile) {
-            FileUtils.deleteFileRecursively(file);
+            file.delete();
         }
-        Log.i(TAG, "makePCMFileToWAVFile  success!");
         return true;
     }
+
+
+    public static boolean makePcmStreamToWavFile(byte[] pcmBytes, String destWavPath) {
+        return makePcmStreamToWavFile(pcmBytes, destWavPath, 1, 16000, 16);
+    }
+
+    /**
+     * 将pcm流转化为wav文件
+     *
+     * @param pcmBytes    pcm字节流
+     * @param destWavPath 目标文件路径
+     * @return
+     */
+    public static boolean makePcmStreamToWavFile(byte[] pcmBytes, String destWavPath, int numChannels, int sampleRate, int bitPerSample) {
+        int totalSize = pcmBytes.length;
+        WaveHeader header = new WaveHeader();
+        header.ChunkSize = totalSize + 36; // 该区块数据的长度（不包含ID和Size的长度）
+        header.AudioFormat = 1; // pcm 音频数据
+        header.NumChannels = (short) numChannels; // 单通道 1，双通道 2
+        header.SampleRate = sampleRate; // 采样率
+        header.BitsPerSample = bitPerSample; // 位宽 16 位
+        header.Subchunk2Size = totalSize; // 音频数据的长度
+
+        byte[] h;
+        try {
+            h = header.getHeader();
+        } catch (IOException e) {
+            return false;
+        }
+
+        if (h.length != 44) { // WAV标准，头部应该是44字节,如果不是44个字节则不进行转换文件
+            return false;
+        }
+
+        File destFile = new File(destWavPath);
+        if (destFile.exists()) {
+            destFile.delete();
+        }
+
+        InputStream inStream = null;
+        OutputStream ouStream = null;
+        byte[] buffer = new byte[8196];
+        try {
+            ouStream = new BufferedOutputStream(new FileOutputStream(destWavPath));
+            ouStream.write(h);
+            inStream = new BufferedInputStream(new ByteArrayInputStream(pcmBytes));
+            int size = inStream.read(buffer);
+            while (size != -1) {
+                ouStream.write(buffer, 0, size);
+                size = inStream.read(buffer);
+            }
+        } catch (IOException ioe) {
+            return false;
+        } finally {
+            if (ouStream != null) {
+                try {
+                    ouStream.close();
+                } catch (IOException e) {
+                    // ignored
+                }
+            }
+            if (inStream != null) {
+                try {
+                    inStream.close();
+                } catch (IOException e) {
+                    // ignored
+                }
+            }
+        }
+        return true;
+    }
+
 }

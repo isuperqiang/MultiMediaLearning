@@ -200,7 +200,7 @@ public class AudioRecorder {
             @Override
             public void run() {
                 String wavFilePath = FileUtils.getWavFilePath(mContext, mPcmFileName);
-                if (PcmToWav.makePCMFileToWAVFile(FileUtils.getPcmFilePath(mContext, mPcmFileName), wavFilePath, false)) {
+                if (PcmToWav.makePcmFileToWavFile(FileUtils.getPcmFilePath(mContext, mPcmFileName), wavFilePath, false)) {
                     //操作成功
                     Log.i(TAG, "保存wav文件成功 " + wavFilePath);
                 } else {
