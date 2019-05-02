@@ -98,7 +98,7 @@ public final class PcmToWav {
 
 
     public static boolean makePcmStreamToWavFile(byte[] pcmBytes, String destWavPath) {
-        return makePcmStreamToWavFile(pcmBytes, destWavPath, 1, 16000, 16);
+        return makePcmStreamToWavFile(pcmBytes, destWavPath, 1, 44100, 16);
     }
 
     /**
