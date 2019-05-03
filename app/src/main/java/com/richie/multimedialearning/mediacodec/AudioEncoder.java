@@ -12,12 +12,13 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
+ * 录音并编码生成 AAC 音频文件，这里采用 44.1kHz采样率、单声道、16位精度
+ *
  * @author Richie on 2019.04.01
- * http://lastwarmth.win/2016/10/22/live-audio/f
- * https://blog.csdn.net/KokJuis/article/details/72781835
- * 录音并编码生成 AAC 音频文件，这里采用 44.1kHz采样率、单声道、16位深，
  */
 public class AudioEncoder {
     public static final String MIMETYPE_AUDIO_AAC = "audio/mp4a-latm";
@@ -39,6 +40,7 @@ public class AudioEncoder {
     private AudioRecord mAudioRecord;
     private MediaCodec mMediaCodec;
     private volatile boolean mStopped;
+    private Executor mExecutor = Executors.newSingleThreadExecutor();
 
     /**
      * 创建录音对象
@@ -71,7 +73,20 @@ public class AudioEncoder {
         mMediaCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
     }
 
-    public void start(File outFile) throws IOException {
+    public void start(final File outFile) throws IOException {
+        mExecutor.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    startAsync(outFile);
+                } catch (IOException e) {
+                    Log.e(TAG, "startAsync: ", e);
+                }
+            }
+        });
+    }
+
+    private void startAsync(File outFile) throws IOException {
         Log.d(TAG, "start() called with: outFile = [" + outFile + "]");
         mStopped = false;
         FileOutputStream fos = new FileOutputStream(outFile);
@@ -90,7 +105,6 @@ public class AudioEncoder {
                         inputBuffer.clear();
                         inputBuffer.put(buffer);
                         inputBuffer.limit(buffer.length);
-                        // TODO: 2019-05-03 present time
                         mMediaCodec.queueInputBuffer(inputBufferIndex, 0, readSize, 0, 0);
                     }
 

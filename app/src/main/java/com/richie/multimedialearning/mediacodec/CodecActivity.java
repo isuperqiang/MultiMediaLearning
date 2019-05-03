@@ -63,21 +63,16 @@ public class CodecActivity extends AppCompatActivity {
                     } else {
                         mBtnStartRecord.setText("停止录音和编码音频");
                         mIsRecording = true;
-                        ThreadHelper.getInstance().execute(new Runnable() {
-                            @Override
-                            public void run() {
-                                mFile = new File(FileUtils.getAacFileDir(CodecActivity.this), FileUtils.getUUID32() + ".aac");
-                                logger.info("out file:{}", mFile.getAbsolutePath());
-                                mAudioEncoder = new AudioEncoder();
-                                mAudioEncoder.createAudio();
-                                try {
-                                    mAudioEncoder.createMediaCodec();
-                                    mAudioEncoder.start(mFile);
-                                } catch (Exception e) {
-                                    logger.error(e);
-                                }
-                            }
-                        });
+                        mFile = new File(FileUtils.getAacFileDir(CodecActivity.this), FileUtils.getUUID32() + ".aac");
+                        logger.info("out file:{}", mFile.getAbsolutePath());
+                        mAudioEncoder = new AudioEncoder();
+                        mAudioEncoder.createAudio();
+                        try {
+                            mAudioEncoder.createMediaCodec();
+                            mAudioEncoder.start(mFile);
+                        } catch (IOException e) {
+                            logger.error(e);
+                        }
                     }
                 }
                 break;

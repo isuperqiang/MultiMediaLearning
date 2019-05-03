@@ -10,12 +10,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
 /**
  * @author Richie on 2019.04.03
- * see https://blog.csdn.net/KokJuis/article/details/72781835
  */
 public final class AacPcmCoder {
     private static final String TAG = "AacPcmCoder";
@@ -25,13 +23,13 @@ public final class AacPcmCoder {
     /**
      * 利用 MediaExtractor 和 MediaCodec 来提取编码后的音频数据并解压成音频源数据
      *
-     * @param encodedFile
-     * @param decodedFile
+     * @param aacFile
+     * @param pcmFile
      * @throws IOException
      */
-    public static void decodeAacToPcm(File encodedFile, File decodedFile) throws IOException {
+    public static void decodeAacToPcm(File aacFile, File pcmFile) throws IOException {
         MediaExtractor extractor = new MediaExtractor();
-        extractor.setDataSource(encodedFile.getAbsolutePath());
+        extractor.setDataSource(aacFile.getAbsolutePath());
         MediaFormat mediaFormat = null;
         for (int i = 0; i < extractor.getTrackCount(); i++) {
             MediaFormat format = extractor.getTrackFormat(i);
@@ -48,8 +46,9 @@ public final class AacPcmCoder {
             return;
         }
 
-        OutputStream fosDecoder = new FileOutputStream(decodedFile);
+        FileOutputStream fosDecoder = new FileOutputStream(pcmFile);
         String mediaMime = mediaFormat.getString(MediaFormat.KEY_MIME);
+        Log.i(TAG, "decodeAacToPcm: mimeType: " + mediaMime);
         MediaCodec codec = MediaCodec.createDecoderByType(mediaMime);
         codec.configure(mediaFormat, null, null, 0);
         codec.start();
@@ -97,7 +96,6 @@ public final class AacPcmCoder {
                     }
 
                     codec.releaseOutputBuffer(outputBufferIndex, false);
-
                     if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
                         Log.i(TAG, "saw output EOS.");
                         sawOutputEOS = true;
@@ -112,15 +110,15 @@ public final class AacPcmCoder {
             }
         } finally {
             Log.i(TAG, "decodeAacToPcm finish");
-            fosDecoder.close();
             codec.stop();
             codec.release();
             extractor.release();
+            fosDecoder.close();
         }
     }
 
     /**
-     * Encode pcm data to aac format
+     * PCM 数据编码为 AAC 格式
      *
      * @param inPcmFile
      * @param outAacFile
