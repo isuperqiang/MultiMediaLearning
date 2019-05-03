@@ -23,7 +23,7 @@
         android:supportsRtl="false"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".codec.CodecActivity"
+            android:name=".mediacodec.CodecActivity"
             android:label="@string/title_activity_codec"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity android:name=".MainActivity">
@@ -42,7 +42,7 @@
             android:theme="@style/Theme.AppCompat.NoActionBar" />
         <activity android:name=".muxerextract.MediaMuxerExtractActivity" />
         <activity
-            android:name=".codec.MediaCodecActivity"
+            android:name=".mediacodec.MediaCodecActivity"
             android:theme="@style/Theme.AppCompat.NoActionBar" />
         <activity
             android:name=".opengl.OpenGLActivity"

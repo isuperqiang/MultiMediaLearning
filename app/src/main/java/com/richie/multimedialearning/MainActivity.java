@@ -14,7 +14,7 @@ import android.view.View;
 import com.richie.multimedialearning.audiorecord.AudioRecordActivity;
 import com.richie.multimedialearning.audiotrack.AudioTrackActivity;
 import com.richie.multimedialearning.camera.CameraPreviewActivity;
-import com.richie.multimedialearning.codec.CodecActivity;
+import com.richie.multimedialearning.mediacodec.CodecActivity;
 import com.richie.multimedialearning.muxerextract.MediaMuxerExtractActivity;
 import com.richie.multimedialearning.opengl.OpenGLActivity;
 import com.richie.multimedialearning.surface.SurfaceActivity;

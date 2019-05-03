@@ -1,4 +1,4 @@
-package com.richie.multimedialearning.codec;
+package com.richie.multimedialearning.mediacodec;
 
 import android.media.AudioFormat;
 import android.media.AudioRecord;
@@ -39,10 +39,6 @@ public class AudioEncoder {
     private AudioRecord mAudioRecord;
     private MediaCodec mMediaCodec;
     private volatile boolean mStopped;
-    /**
-     * previous presentationTimeUs for writing
-     */
-    private long prevOutputPTSUs = 0;
 
     /**
      * 创建录音对象
@@ -82,7 +78,6 @@ public class AudioEncoder {
         mMediaCodec.start();
         mAudioRecord.startRecording();
         byte[] buffer = new byte[mBufferSizeInBytes];
-        long startNanoTime = System.nanoTime();
         ByteBuffer[] inputBuffers = mMediaCodec.getInputBuffers();
         ByteBuffer[] outputBuffers = mMediaCodec.getOutputBuffers();
         try {
@@ -131,21 +126,6 @@ public class AudioEncoder {
     public void stop() {
         Log.d(TAG, "stop() called");
         mStopped = true;
-    }
-
-    /**
-     * get next encoding presentationTimeUs
-     *
-     * @return
-     */
-    private long getPTSUs() {
-        long result = System.nanoTime() / 1000L;
-        // presentationTimeUs should be monotonic
-        // otherwise muxer fail to write
-        if (result < prevOutputPTSUs) {
-            result = (prevOutputPTSUs - result) + result;
-        }
-        return result;
     }
 
     /**

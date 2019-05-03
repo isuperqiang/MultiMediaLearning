@@ -1,8 +1,9 @@
-package com.richie.multimedialearning.codec;
+package com.richie.multimedialearning.mediacodec;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.richie.easylog.ILogger;
@@ -22,14 +23,16 @@ public class CodecActivity extends AppCompatActivity {
     private final ILogger logger = LoggerFactory.getLogger(CodecActivity.class);
     private AudioEncoder mAudioEncoder;
     private File mFile;
+    private Button mBtnStartRecord;
+    private boolean mIsRecording;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_codec);
         ViewClickListener viewClickListener = new ViewClickListener();
-        findViewById(R.id.btn_start_record_encode_audio).setOnClickListener(viewClickListener);
-        findViewById(R.id.btn_stop_record_encode_audio).setOnClickListener(viewClickListener);
+        mBtnStartRecord = findViewById(R.id.btn_start_record_encode_audio);
+        mBtnStartRecord.setOnClickListener(viewClickListener);
         findViewById(R.id.btn_start_decode_audio).setOnClickListener(viewClickListener);
         findViewById(R.id.btn_start_encode_audio).setOnClickListener(viewClickListener);
     }
@@ -37,8 +40,13 @@ public class CodecActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
+        stopRecord();
+    }
+
+    private void stopRecord() {
         if (mAudioEncoder != null) {
             mAudioEncoder.stop();
+            mAudioEncoder = null;
         }
     }
 
@@ -48,26 +56,28 @@ public class CodecActivity extends AppCompatActivity {
         public void onClick(View v) {
             switch (v.getId()) {
                 case R.id.btn_start_record_encode_audio: {
-                    ThreadHelper.getInstance().execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            mFile = new File(FileUtils.getAacFileDir(CodecActivity.this), FileUtils.getUUID32() + ".aac");
-                            logger.info("out file:{}", mFile.getAbsolutePath());
-                            mAudioEncoder = new AudioEncoder();
-                            mAudioEncoder.createAudio();
-                            try {
-                                mAudioEncoder.createMediaCodec();
-                                mAudioEncoder.start(mFile);
-                            } catch (Exception e) {
-                                logger.error(e);
+                    if (mIsRecording) {
+                        mBtnStartRecord.setText("开始录音并编码音频");
+                        mIsRecording = false;
+                        stopRecord();
+                    } else {
+                        mBtnStartRecord.setText("停止录音和编码音频");
+                        mIsRecording = true;
+                        ThreadHelper.getInstance().execute(new Runnable() {
+                            @Override
+                            public void run() {
+                                mFile = new File(FileUtils.getAacFileDir(CodecActivity.this), FileUtils.getUUID32() + ".aac");
+                                logger.info("out file:{}", mFile.getAbsolutePath());
+                                mAudioEncoder = new AudioEncoder();
+                                mAudioEncoder.createAudio();
+                                try {
+                                    mAudioEncoder.createMediaCodec();
+                                    mAudioEncoder.start(mFile);
+                                } catch (Exception e) {
+                                    logger.error(e);
+                                }
                             }
-                        }
-                    });
-                }
-                break;
-                case R.id.btn_stop_record_encode_audio: {
-                    if (mAudioEncoder != null) {
-                        mAudioEncoder.stop();
+                        });
                     }
                 }
                 break;

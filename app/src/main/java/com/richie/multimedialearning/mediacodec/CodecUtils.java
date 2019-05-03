@@ -1,4 +1,4 @@
-package com.richie.multimedialearning.codec;
+package com.richie.multimedialearning.mediacodec;
 
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;
