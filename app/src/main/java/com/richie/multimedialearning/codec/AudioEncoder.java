@@ -15,60 +15,64 @@ import java.nio.ByteBuffer;
 
 /**
  * @author Richie on 2019.04.01
+ * http://lastwarmth.win/2016/10/22/live-audio/f
+ * https://blog.csdn.net/KokJuis/article/details/72781835
+ * 录音并编码生成 AAC 音频文件，这里采用 44.1kHz采样率、单声道、16位深，
  */
 public class AudioEncoder {
     public static final String MIMETYPE_AUDIO_AAC = "audio/mp4a-latm";
-    // 音频输入-麦克风
-    private final static int AUDIO_INPUT = MediaRecorder.AudioSource.MIC;
-    // 44100是目前的标准
-    private final static int AUDIO_SAMPLE_RATE = 44100;
-    // 单声道
-    private final static int AUDIO_CHANNEL = AudioFormat.CHANNEL_IN_MONO;
-    // 编码
-    private final static int AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
+    // 输入源 麦克风
+    private final static int AUDIO_SOURCE = MediaRecorder.AudioSource.MIC;
+    // 采样率 44100Hz，所有设备都支持
+    private final static int SAMPLE_RATE = 44100;
+    // 通道 单声道，所有设备都支持
+    private final static int CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO;
+    // 位深 16 位，所有设备都支持
+    private final static int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
+    // 通道数 单通道
+    private static final int CHANNEL_COUNT = 1;
     // 比特率
-    private static final int BIT_RATE = 64000;
+    private static final int BIT_RATE = 96000;
     private static final String TAG = "AudioEncoder";
     // 缓冲区字节大小
     private int mBufferSizeInBytes;
     private AudioRecord mAudioRecord;
     private MediaCodec mMediaCodec;
     private volatile boolean mStopped;
+    /**
+     * previous presentationTimeUs for writing
+     */
+    private long prevOutputPTSUs = 0;
 
     /**
      * 创建录音对象
      */
     public void createAudio() {
         // 获得缓冲区字节大小
-        mBufferSizeInBytes = AudioRecord.getMinBufferSize(AudioEncoder.AUDIO_SAMPLE_RATE, AudioEncoder.AUDIO_CHANNEL, AudioEncoder.AUDIO_ENCODING);
-        if (mBufferSizeInBytes == AudioRecord.ERROR_BAD_VALUE || mBufferSizeInBytes == AudioRecord.ERROR) {
-            throw new RuntimeException("AudioRecord is not available");
+        mBufferSizeInBytes = AudioRecord.getMinBufferSize(AudioEncoder.SAMPLE_RATE, AudioEncoder.CHANNEL_CONFIG, AudioEncoder.AUDIO_FORMAT);
+        if (mBufferSizeInBytes <= 0) {
+            throw new RuntimeException("AudioRecord is not available, minBufferSize: " + mBufferSizeInBytes);
         }
+        Log.i(TAG, "createAudioRecord minBufferSize: " + mBufferSizeInBytes);
 
-        mAudioRecord = new AudioRecord(AudioEncoder.AUDIO_INPUT, AudioEncoder.AUDIO_SAMPLE_RATE, AudioEncoder.AUDIO_CHANNEL, AudioEncoder.AUDIO_ENCODING, mBufferSizeInBytes);
+        mAudioRecord = new AudioRecord(AudioEncoder.AUDIO_SOURCE, AudioEncoder.SAMPLE_RATE, AudioEncoder.CHANNEL_CONFIG, AudioEncoder.AUDIO_FORMAT, mBufferSizeInBytes);
         int state = mAudioRecord.getState();
-        Log.i(TAG, "createAudio state:" + state + ", initialized:" + (state == AudioRecord.STATE_INITIALIZED));
+        Log.i(TAG, "createAudio state: " + state + ", initialized: " + (state == AudioRecord.STATE_INITIALIZED));
     }
 
-    public void createMediaCodec() {
+    public void createMediaCodec() throws IOException {
         MediaCodecInfo mediaCodecInfo = CodecUtils.selectCodec(MIMETYPE_AUDIO_AAC);
-        if (mediaCodecInfo != null) {
-            Log.i(TAG, "createMediaCodec: mediaCodecInfo " + mediaCodecInfo.getName());
-        } else {
-            throw new RuntimeException("encoder is not available");
+        if (mediaCodecInfo == null) {
+            throw new RuntimeException(MIMETYPE_AUDIO_AAC + " encoder is not available");
         }
+        Log.i(TAG, "createMediaCodec: mediaCodecInfo " + mediaCodecInfo.getName());
 
-        MediaFormat format = MediaFormat.createAudioFormat(MIMETYPE_AUDIO_AAC, AUDIO_SAMPLE_RATE, 1);
+        MediaFormat format = MediaFormat.createAudioFormat(MIMETYPE_AUDIO_AAC, SAMPLE_RATE, CHANNEL_COUNT);
         format.setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC);
         format.setInteger(MediaFormat.KEY_BIT_RATE, BIT_RATE);
-        format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, mBufferSizeInBytes * 2);
 
-        try {
-            mMediaCodec = MediaCodec.createEncoderByType(MIMETYPE_AUDIO_AAC);
-            mMediaCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
-        } catch (IOException e) {
-            Log.e(TAG, "createCodec: ", e);
-        }
+        mMediaCodec = MediaCodec.createEncoderByType(MIMETYPE_AUDIO_AAC);
+        mMediaCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
     }
 
     public void start(File outFile) throws IOException {
@@ -79,28 +83,29 @@ public class AudioEncoder {
         mAudioRecord.startRecording();
         byte[] buffer = new byte[mBufferSizeInBytes];
         long startNanoTime = System.nanoTime();
+        ByteBuffer[] inputBuffers = mMediaCodec.getInputBuffers();
+        ByteBuffer[] outputBuffers = mMediaCodec.getOutputBuffers();
         try {
             while (!mStopped) {
                 int readSize = mAudioRecord.read(buffer, 0, mBufferSizeInBytes);
-                if (AudioRecord.ERROR_INVALID_OPERATION != readSize && AudioRecord.ERROR_BAD_VALUE != readSize
-                        && AudioRecord.ERROR_DEAD_OBJECT != readSize && AudioRecord.ERROR != readSize) {
-                    ByteBuffer[] inputBuffers = mMediaCodec.getInputBuffers();
+                if (readSize > 0) {
                     int inputBufferIndex = mMediaCodec.dequeueInputBuffer(-1);
                     if (inputBufferIndex >= 0) {
                         ByteBuffer inputBuffer = inputBuffers[inputBufferIndex];
                         inputBuffer.clear();
                         inputBuffer.put(buffer);
-                        mMediaCodec.queueInputBuffer(inputBufferIndex, 0, readSize, (System.nanoTime() - startNanoTime) / 1000, 0);
+                        inputBuffer.limit(buffer.length);
+                        // TODO: 2019-05-03 present time
+                        mMediaCodec.queueInputBuffer(inputBufferIndex, 0, readSize, 0, 0);
                     }
 
-                    ByteBuffer[] outputBuffers = mMediaCodec.getOutputBuffers();
                     MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
                     int outputBufferIndex = mMediaCodec.dequeueOutputBuffer(bufferInfo, 0);
                     while (outputBufferIndex >= 0) {
                         ByteBuffer outputBuffer = outputBuffers[outputBufferIndex];
                         outputBuffer.position(bufferInfo.offset);
                         outputBuffer.limit(bufferInfo.offset + bufferInfo.size);
-                        byte[] chunkAudio = new byte[bufferInfo.size + 7];
+                        byte[] chunkAudio = new byte[bufferInfo.size + 7];// 7 is ADTS size
                         addADTStoPacket(chunkAudio, chunkAudio.length);
                         outputBuffer.get(chunkAudio, 7, bufferInfo.size);
                         outputBuffer.position(bufferInfo.offset);
@@ -115,16 +120,32 @@ public class AudioEncoder {
             }
         } finally {
             Log.i(TAG, "released");
-            fos.close();
             mAudioRecord.stop();
-            mMediaCodec.stop();
             mAudioRecord.release();
+            mMediaCodec.stop();
             mMediaCodec.release();
+            fos.close();
         }
     }
 
     public void stop() {
+        Log.d(TAG, "stop() called");
         mStopped = true;
+    }
+
+    /**
+     * get next encoding presentationTimeUs
+     *
+     * @return
+     */
+    private long getPTSUs() {
+        long result = System.nanoTime() / 1000L;
+        // presentationTimeUs should be monotonic
+        // otherwise muxer fail to write
+        if (result < prevOutputPTSUs) {
+            result = (prevOutputPTSUs - result) + result;
+        }
+        return result;
     }
 
     /**
@@ -137,7 +158,7 @@ public class AudioEncoder {
     private void addADTStoPacket(byte[] packet, int packetLen) {
         int profile = 2;  //AAC LC
         int freqIdx = 4;  //44.1KHz
-        int chanCfg = 2;  //CPE
+        int chanCfg = 1;  //CPE
         // fill in ADTS data
         packet[0] = (byte) 0xFF;
         packet[1] = (byte) 0xF9;
@@ -147,8 +168,4 @@ public class AudioEncoder {
         packet[5] = (byte) (((packetLen & 7) << 5) + 0x1F);
         packet[6] = (byte) 0xFC;
     }
-
-
-    // http://lastwarmth.win/2016/10/22/live-audio/
-
 }

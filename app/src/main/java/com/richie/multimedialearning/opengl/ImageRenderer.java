@@ -47,8 +47,6 @@ public class ImageRenderer implements GLSurfaceView.Renderer {
     };
     private final FloatBuffer mVertexBuffer;
     private final FloatBuffer mTextureBuffer;
-    private final float[] mProjectionMatrix = new float[16];
-    private final float[] mViewMatrix = new float[16];
     private float[] mMvpMatrix = new float[16];
     private int mProgram;
     private int mMvpMatrixHandle;
@@ -92,7 +90,7 @@ public class ImageRenderer implements GLSurfaceView.Renderer {
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         GLES20.glViewport(0, 0, width, height);
-
+        // Image CenterInside
         mMvpMatrix = GLESUtils.changeMvpMatrixInside(width, height, mBitmapWidth, mBitmapHeight);
     }
 

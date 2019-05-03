@@ -40,7 +40,7 @@
         <activity
             android:name=".camera.CameraPreviewActivity"
             android:theme="@style/Theme.AppCompat.NoActionBar" />
-        <activity android:name=".mp4.MediaMp4Activity" />
+        <activity android:name=".muxerextract.MediaMuxerExtractActivity" />
         <activity
             android:name=".codec.MediaCodecActivity"
             android:theme="@style/Theme.AppCompat.NoActionBar" />

@@ -47,7 +47,7 @@
         app:layout_constraintTop_toBottomOf="@id/btn_audio_track" />
 
     <Button
-        android:id="@+id/btn_media_mp4"
+        android:id="@+id/btn_media_muxur_extract"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="MediaMuxer/MediaExtractor"
@@ -64,7 +64,7 @@
         android:textAllCaps="false"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btn_media_mp4" />
+        app:layout_constraintTop_toBottomOf="@id/btn_media_muxur_extract" />
 
 
     <Button

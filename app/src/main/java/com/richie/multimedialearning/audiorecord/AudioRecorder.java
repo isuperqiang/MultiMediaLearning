@@ -71,12 +71,12 @@ public class AudioRecorder {
         // 获得缓冲区字节大小
         mBufferSizeInBytes = AudioRecord.getMinBufferSize(sampleRateInHz, channelConfig, audioFormat);
         if (mBufferSizeInBytes <= 0) {
-            throw new IllegalStateException("AudioRecord is not available " + mBufferSizeInBytes);
+            throw new IllegalStateException("AudioRecord is not available, minBufferSize: " + mBufferSizeInBytes);
         }
 
         mAudioRecord = new AudioRecord(audioSource, sampleRateInHz, channelConfig, audioFormat, mBufferSizeInBytes);
         int state = mAudioRecord.getState();
-        Log.i(TAG, "createAudio state:" + state + ", initialized:" + (state == AudioRecord.STATE_INITIALIZED));
+        Log.i(TAG, "createAudio state: " + state + ", initialized: " + (state == AudioRecord.STATE_INITIALIZED));
         mPcmFileName = fileName;
         mStatus = Status.STATUS_READY;
     }

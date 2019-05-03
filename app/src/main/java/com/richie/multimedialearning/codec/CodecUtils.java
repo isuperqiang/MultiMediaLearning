@@ -2,15 +2,13 @@ package com.richie.multimedialearning.codec;
 
 import android.media.MediaCodecInfo;
 import android.media.MediaCodecList;
-
-import com.richie.easylog.ILogger;
-import com.richie.easylog.LoggerFactory;
+import android.util.Log;
 
 /**
  * @author Richie on 2019.04.01
  */
 public final class CodecUtils {
-    private static ILogger logger = LoggerFactory.getLogger(CodecUtils.class);
+    private static final String TAG = "CodecUtils";
 
     /**
      * Returns the first codec capable of encoding the specified MIME type, or null if no
@@ -47,7 +45,7 @@ public final class CodecUtils {
                 return colorFormat;
             }
         }
-        logger.warn("couldn't find a good color format for " + codecInfo.getName() + " / " + mimeType);
+        Log.w(TAG, "couldn't find a good color format for " + codecInfo.getName() + " / " + mimeType);
         return 0;   // not reached
     }
 

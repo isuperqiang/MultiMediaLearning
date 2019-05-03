@@ -18,7 +18,6 @@ import java.io.IOException;
  * blog:
  * - https://yedaxia.github.io/Android-MediaExtractor-And-MediaCodec/
  */
-
 public class CodecActivity extends AppCompatActivity {
     private final ILogger logger = LoggerFactory.getLogger(CodecActivity.class);
     private AudioEncoder mAudioEncoder;
@@ -35,6 +34,14 @@ public class CodecActivity extends AppCompatActivity {
         findViewById(R.id.btn_start_encode_audio).setOnClickListener(viewClickListener);
     }
 
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (mAudioEncoder != null) {
+            mAudioEncoder.stop();
+        }
+    }
+
     private class ViewClickListener implements View.OnClickListener {
 
         @Override
@@ -44,7 +51,7 @@ public class CodecActivity extends AppCompatActivity {
                     ThreadHelper.getInstance().execute(new Runnable() {
                         @Override
                         public void run() {
-                            mFile = new File(FileUtils.getFileDir(CodecActivity.this), FileUtils.getUUID32() + ".aac");
+                            mFile = new File(FileUtils.getAacFileDir(CodecActivity.this), FileUtils.getUUID32() + ".aac");
                             logger.info("out file:{}", mFile.getAbsolutePath());
                             mAudioEncoder = new AudioEncoder();
                             mAudioEncoder.createAudio();
@@ -68,9 +75,14 @@ public class CodecActivity extends AppCompatActivity {
                     ThreadHelper.getInstance().execute(new Runnable() {
                         @Override
                         public void run() {
+                            // 44.1kHz采样率，单通道，16位深
                             File pcmFile = new File(FileUtils.getExternalAssetsDir(CodecActivity.this), "test.pcm");
-                            File aacFile = new File(FileUtils.getAacFileDir(CodecActivity.this), "test_.aac");
+                            File aacFile = new File(FileUtils.getAacFileDir(CodecActivity.this), "test_output.aac");
+                            if (aacFile.exists()) {
+                                aacFile.delete();
+                            }
                             try {
+                                logger.info("startEncode");
                                 AacPcmCoder.encodePcmToAac(pcmFile, aacFile);
                                 runOnUiThread(new Runnable() {
                                     @Override
@@ -89,10 +101,11 @@ public class CodecActivity extends AppCompatActivity {
                     ThreadHelper.getInstance().execute(new Runnable() {
                         @Override
                         public void run() {
+                            // 44.1kHz采样率，单通道
                             File aacFile = new File(FileUtils.getExternalAssetsDir(CodecActivity.this), "test.aac");
-                            File pcmFile = new File(FileUtils.getPcmFileDir(CodecActivity.this), "test_.pcm");
+                            File pcmFile = new File(FileUtils.getPcmFileDir(CodecActivity.this), "test_output.pcm");
                             try {
-                                AacPcmCoder.decodeAac2Pcm(aacFile, pcmFile);
+                                AacPcmCoder.decodeAacToPcm(aacFile, pcmFile);
                                 runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
@@ -106,7 +119,6 @@ public class CodecActivity extends AppCompatActivity {
                     });
                 }
                 break;
-
                 default:
             }
         }

@@ -15,11 +15,12 @@ import java.nio.ByteBuffer;
 
 /**
  * @author Richie on 2019.04.03
+ * see https://blog.csdn.net/KokJuis/article/details/72781835
  */
 public final class AacPcmCoder {
     private static final String TAG = "AacPcmCoder";
     private final static String AUDIO_MIME = "audio/mp4a-latm";
-    private final static long AUDIO_BYTES_PER_SAMPLE = 44100 * 16 / 8;
+    private final static long AUDIO_BYTES_PER_SAMPLE = 44100 * 1 * 16 / 8;
 
     /**
      * 利用 MediaExtractor 和 MediaCodec 来提取编码后的音频数据并解压成音频源数据
@@ -28,7 +29,7 @@ public final class AacPcmCoder {
      * @param decodedFile
      * @throws IOException
      */
-    public static void decodeAac2Pcm(File encodedFile, File decodedFile) throws IOException {
+    public static void decodeAacToPcm(File encodedFile, File decodedFile) throws IOException {
         MediaExtractor extractor = new MediaExtractor();
         extractor.setDataSource(encodedFile.getAbsolutePath());
         MediaFormat mediaFormat = null;
@@ -42,7 +43,7 @@ public final class AacPcmCoder {
             }
         }
         if (mediaFormat == null) {
-            Log.e(TAG, "not a valid file with audio track..");
+            Log.e(TAG, "Invalid file with audio track.");
             extractor.release();
             return;
         }
@@ -54,11 +55,10 @@ public final class AacPcmCoder {
         codec.start();
         ByteBuffer[] codecInputBuffers = codec.getInputBuffers();
         ByteBuffer[] codecOutputBuffers = codec.getOutputBuffers();
-        final long kTimeOutUs = 5000;
+        final long kTimeOutUs = 10_000;
         MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
         boolean sawInputEOS = false;
         boolean sawOutputEOS = false;
-        int totalRawSize = 0;
 
         try {
             while (!sawOutputEOS) {
@@ -72,8 +72,7 @@ public final class AacPcmCoder {
                             sawInputEOS = true;
                             codec.queueInputBuffer(inputBufIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
                         } else {
-                            long presentationTimeUs = extractor.getSampleTime();
-                            codec.queueInputBuffer(inputBufIndex, 0, sampleSize, presentationTimeUs, 0);
+                            codec.queueInputBuffer(inputBufIndex, 0, sampleSize, extractor.getSampleTime(), 0);
                             extractor.advance();
                         }
                     }
@@ -94,7 +93,6 @@ public final class AacPcmCoder {
                         outBuf.limit(info.offset + info.size);
                         byte[] data = new byte[info.size];
                         outBuf.get(data);
-                        totalRawSize += data.length;
                         fosDecoder.write(data);
                     }
 
@@ -113,7 +111,7 @@ public final class AacPcmCoder {
                 }
             }
         } finally {
-            Log.i(TAG, "release totalRawSize: " + totalRawSize);
+            Log.i(TAG, "decodeAacToPcm finish");
             fosDecoder.close();
             codec.stop();
             codec.release();
@@ -121,14 +119,21 @@ public final class AacPcmCoder {
         }
     }
 
-
-    public static void encodePcmToAac(File pcmAudioFile, File outEncodeFile) throws IOException {
+    /**
+     * Encode pcm data to aac format
+     *
+     * @param inPcmFile
+     * @param outAacFile
+     * @throws IOException
+     */
+    public static void encodePcmToAac(File inPcmFile, File outAacFile) throws IOException {
         FileInputStream fisRawAudio = null;
         FileOutputStream fosAccAudio = null;
+        MediaCodec audioEncoder = createAudioEncoder();
+        ;
         try {
-            fisRawAudio = new FileInputStream(pcmAudioFile);
-            fosAccAudio = new FileOutputStream(outEncodeFile);
-            final MediaCodec audioEncoder = createACCAudioDecoder();
+            fisRawAudio = new FileInputStream(inPcmFile);
+            fosAccAudio = new FileOutputStream(outAacFile);
             audioEncoder.start();
             ByteBuffer[] audioInputBuffers = audioEncoder.getInputBuffers();
             ByteBuffer[] audioOutputBuffers = audioEncoder.getOutputBuffers();
@@ -138,7 +143,7 @@ public final class AacPcmCoder {
             MediaCodec.BufferInfo outBufferInfo = new MediaCodec.BufferInfo();
             boolean readRawAudioEOS = false;
             byte[] rawInputBytes = new byte[8192];
-            int readRawAudioCount = 0;
+            int readRawAudioCount;
             int rawAudioSize = 0;
             long lastAudioPresentationTimeUs = 0;
             int inputBufIndex, outputBufIndex;
@@ -152,11 +157,9 @@ public final class AacPcmCoder {
                         if (bufferSize != rawInputBytes.length) {
                             rawInputBytes = new byte[bufferSize];
                         }
-                        if (!readRawAudioEOS) {
-                            readRawAudioCount = fisRawAudio.read(rawInputBytes);
-                            if (readRawAudioCount == -1) {
-                                readRawAudioEOS = true;
-                            }
+                        readRawAudioCount = fisRawAudio.read(rawInputBytes);
+                        if (readRawAudioCount == -1) {
+                            readRawAudioEOS = true;
                         }
                         if (readRawAudioEOS) {
                             audioEncoder.queueInputBuffer(inputBufIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
@@ -165,7 +168,7 @@ public final class AacPcmCoder {
                             inputBuffer.put(rawInputBytes, 0, readRawAudioCount);
                             rawAudioSize += readRawAudioCount;
                             audioEncoder.queueInputBuffer(inputBufIndex, 0, readRawAudioCount, audioTimeUs, 0);
-                            audioTimeUs = (long) (1000000 * (rawAudioSize / 2.0) / AUDIO_BYTES_PER_SAMPLE);
+                            audioTimeUs = (long) (1_000_000 * ((float) rawAudioSize / AUDIO_BYTES_PER_SAMPLE));
                         }
                     }
                 }
@@ -182,18 +185,18 @@ public final class AacPcmCoder {
                         ByteBuffer outBuffer = audioOutputBuffers[outputBufIndex];
                         outBuffer.position(outBufferInfo.offset);
                         outBuffer.limit(outBufferInfo.offset + outBufferInfo.size);
-                        //Log.i(TAG, String.format(" writing audio sample : size=%s , presentationTimeUs=%s", outBufferInfo.size, outBufferInfo.presentationTimeUs));
+                        //Log.v(TAG, String.format(" writing audio sample : size=%s , presentationTimeUs=%s", outBufferInfo.size, outBufferInfo.presentationTimeUs));
                         if (lastAudioPresentationTimeUs <= outBufferInfo.presentationTimeUs) {
                             lastAudioPresentationTimeUs = outBufferInfo.presentationTimeUs;
                             int outBufSize = outBufferInfo.size;
                             int outPacketSize = outBufSize + 7;
                             outBuffer.position(outBufferInfo.offset);
                             outBuffer.limit(outBufferInfo.offset + outBufSize);
-                            byte[] outData = new byte[outBufSize + 7];
+                            byte[] outData = new byte[outPacketSize];
                             addADTStoPacket(outData, outPacketSize);
                             outBuffer.get(outData, 7, outBufSize);
                             fosAccAudio.write(outData, 0, outData.length);
-                            //Log.i(TAG, outData.length + " bytes written.");
+                            //Log.v(TAG, outData.length + " bytes written.");
                         } else {
                             Log.e(TAG, "error sample! its presentationTimeUs should not lower than before.");
                         }
@@ -210,20 +213,18 @@ public final class AacPcmCoder {
                 }
             }
         } finally {
-            try {
-                if (fisRawAudio != null) {
-                    fisRawAudio.close();
-                }
-                if (fosAccAudio != null) {
-                    fosAccAudio.close();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
+            Log.i(TAG, "encodePcmToAac: finish");
+            if (fisRawAudio != null) {
+                fisRawAudio.close();
             }
+            if (fosAccAudio != null) {
+                fosAccAudio.close();
+            }
+            audioEncoder.release();
         }
     }
 
-    private static MediaCodec createACCAudioDecoder() throws IOException {
+    private static MediaCodec createAudioEncoder() throws IOException {
         MediaCodec codec = MediaCodec.createEncoderByType(AUDIO_MIME);
         MediaFormat format = new MediaFormat();
         format.setString(MediaFormat.KEY_MIME, AUDIO_MIME);
@@ -241,12 +242,15 @@ public final class AacPcmCoder {
      * AAC data.
      * <p>
      * Note the packetLen must count in the ADTS header itself.
+     * <p>
+     * see https://blog.csdn.net/bsplover/article/details/7426476,
+     * Sample rate and channel count are variables.
      **/
     private static void addADTStoPacket(byte[] packet, int packetLen) {
         int profile = 2;  //AAC LC
         //39=MediaCodecInfo.CodecProfileLevel.AACObjectELD;
         int freqIdx = 4;  //44.1KHz
-        int chanCfg = 2;  //CPE
+        int chanCfg = 1;  //CPE
         // fill in ADTS data
         packet[0] = (byte) 0xFF;
         packet[1] = (byte) 0xF9;

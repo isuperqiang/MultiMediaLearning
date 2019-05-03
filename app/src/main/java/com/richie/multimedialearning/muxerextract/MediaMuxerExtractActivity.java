@@ -1,4 +1,4 @@
-package com.richie.multimedialearning.mp4;
+package com.richie.multimedialearning.muxerextract;
 
 import android.media.MediaCodec;
 import android.media.MediaExtractor;
@@ -22,16 +22,16 @@ import java.nio.ByteBuffer;
  * 音视频混合和分离
  * https://mp.weixin.qq.com/s?timestamp=1556713288&src=3&ver=1&signature=O*pikadNlafbj88qn-Qy4*TJlpfOJfe65DikvyxR6Q4lJEGfOAtxsI6eBie1XnGGLt6ON0aNdGWnw4E-Kbfqv6mZGJckaCioc-PmeZxygVUzu7*ec8CxORCd3WcX5bAgHbJ1AnIN1WTGLAj*v9lJwkJ9qmJm6SxmshqE9T*6a9M=
  */
-public class MediaMp4Activity extends AppCompatActivity implements View.OnClickListener {
+public class MediaMuxerExtractActivity extends AppCompatActivity implements View.OnClickListener {
     public static final String OUTPUT_VIDEO = "output_video.mp4";
     public static final String OUTPUT_AUDIO = "output_audio.mp3";
     private static final String VIDEO_SOURCE = "input.mp4";
-    private final ILogger logger = LoggerFactory.getLogger(MediaMp4Activity.class);
+    private final ILogger logger = LoggerFactory.getLogger(MediaMuxerExtractActivity.class);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_media_mp4);
+        setContentView(R.layout.activity_media_muxur_extract);
         findViewById(R.id.btn_extract_video).setOnClickListener(this);
         findViewById(R.id.btn_extract_audio).setOnClickListener(this);
         findViewById(R.id.btn_mix_media).setOnClickListener(this);
@@ -70,15 +70,16 @@ public class MediaMp4Activity extends AppCompatActivity implements View.OnClickL
             int trackCount = mediaExtractor.getTrackCount();
             // 循环轨道数，找到我们想要的视频轨
             for (int i = 0; i < trackCount; i++) {
-                mediaFormat = mediaExtractor.getTrackFormat(i);
-                String mimeType = mediaFormat.getString(MediaFormat.KEY_MIME);
+                MediaFormat format = mediaExtractor.getTrackFormat(i);
+                String mimeType = format.getString(MediaFormat.KEY_MIME);
                 // //找到要分离的视频轨
                 if (mimeType.startsWith("video/")) {
                     videoIndex = i;
+                    mediaFormat = format;
                     break;
                 }
             }
-            if (mediaFormat == null || videoIndex < 0) {
+            if (mediaFormat == null) {
                 return;
             }
 
@@ -176,14 +177,15 @@ public class MediaMp4Activity extends AppCompatActivity implements View.OnClickL
             MediaFormat mediaFormat = null;
             int audioIndex = -1;
             for (int i = 0; i < trackCount; i++) {
-                mediaFormat = mediaExtractor.getTrackFormat(i);
-                String mimeType = mediaFormat.getString(MediaFormat.KEY_MIME);
+                MediaFormat format = mediaExtractor.getTrackFormat(i);
+                String mimeType = format.getString(MediaFormat.KEY_MIME);
                 if (mimeType.startsWith("audio/")) {
                     audioIndex = i;
+                    mediaFormat = format;
                     break;
                 }
             }
-            if (mediaFormat == null || audioIndex < 0) {
+            if (mediaFormat == null) {
                 return;
             }
             // MediaFormat 封装了媒体数据（音频，视频，字幕）格式的信息，所有信息都以键值对形式表示。
@@ -252,14 +254,15 @@ public class MediaMp4Activity extends AppCompatActivity implements View.OnClickL
             int videoTrackIndex = -1;
             int videoTrackCount = videoExtractor.getTrackCount();
             for (int i = 0; i < videoTrackCount; i++) {
-                videoFormat = videoExtractor.getTrackFormat(i);
-                String mimeType = videoFormat.getString(MediaFormat.KEY_MIME);
+                MediaFormat format = videoExtractor.getTrackFormat(i);
+                String mimeType = format.getString(MediaFormat.KEY_MIME);
                 if (mimeType.startsWith("video/")) {
                     videoTrackIndex = i;
+                    videoFormat = format;
                     break;
                 }
             }
-            if (videoFormat == null || videoTrackIndex < 0) {
+            if (videoFormat == null) {
                 return;
             }
 
@@ -269,14 +272,15 @@ public class MediaMp4Activity extends AppCompatActivity implements View.OnClickL
 
             int audioTrackCount = audioExtractor.getTrackCount();
             for (int i = 0; i < audioTrackCount; i++) {
-                audioFormat = audioExtractor.getTrackFormat(i);
-                String mimeType = audioFormat.getString(MediaFormat.KEY_MIME);
+                MediaFormat format = audioExtractor.getTrackFormat(i);
+                String mimeType = format.getString(MediaFormat.KEY_MIME);
                 if (mimeType.startsWith("audio/")) {
                     audioTrackIndex = i;
+                    audioFormat = format;
                     break;
                 }
             }
-            if (audioFormat == null || audioTrackIndex < 0) {
+            if (audioFormat == null) {
                 return;
             }
 

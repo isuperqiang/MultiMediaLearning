@@ -1,4 +1,4 @@
-package com.richie.multimedialearning.mp4;
+package com.richie.multimedialearning.muxerextract;
 
 import android.app.Activity;
 import android.content.Context;
