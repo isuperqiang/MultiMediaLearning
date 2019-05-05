@@ -12,7 +12,7 @@ import java.util.List;
  */
 public final class CameraUtils {
     private static final String TAG = "CameraUtils";
-    private static boolean DEBUG = true;
+    private static boolean DEBUG = false;
 
     private CameraUtils() {
     }

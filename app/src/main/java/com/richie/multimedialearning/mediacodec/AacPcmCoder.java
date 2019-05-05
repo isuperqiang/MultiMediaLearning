@@ -21,7 +21,7 @@ public final class AacPcmCoder {
     private final static long AUDIO_BYTES_PER_SAMPLE = 44100 * 1 * 16 / 8;
 
     /**
-     * 利用 MediaExtractor 和 MediaCodec 来提取编码后的音频数据并解压成音频源数据
+     * AAC 格式解码成 PCM 数据
      *
      * @param aacFile
      * @param pcmFile
@@ -147,7 +147,7 @@ public final class AacPcmCoder {
             int inputBufIndex, outputBufIndex;
             while (!sawOutputEOS) {
                 if (!sawInputEOS) {
-                    inputBufIndex = audioEncoder.dequeueInputBuffer(10000);
+                    inputBufIndex = audioEncoder.dequeueInputBuffer(10_000);
                     if (inputBufIndex >= 0) {
                         ByteBuffer inputBuffer = audioInputBuffers[inputBufIndex];
                         inputBuffer.clear();
@@ -171,7 +171,7 @@ public final class AacPcmCoder {
                     }
                 }
 
-                outputBufIndex = audioEncoder.dequeueOutputBuffer(outBufferInfo, 10000);
+                outputBufIndex = audioEncoder.dequeueOutputBuffer(outBufferInfo, 10_000);
                 if (outputBufIndex >= 0) {
                     // Simply ignore codec config buffers.
                     if ((outBufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {

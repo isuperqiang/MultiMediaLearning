@@ -20,7 +20,6 @@ import com.richie.multimedialearning.utils.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 
 /**
@@ -44,19 +43,6 @@ public class MediaCodecActivity extends AppCompatActivity {
         surfaceView.getHolder().addCallback(new MySurfaceCallback());
 
         logger.info("supportH264Codec:{}", supportH264Codec());
-        checkInputFile();
-    }
-
-    private void checkInputFile() {
-        try {
-            File dest = new File(FileUtils.getFileDir(this), VIDEO_SOURCE_PATH);
-            if (!dest.exists()) {
-                InputStream inputStream = getAssets().open(VIDEO_SOURCE_PATH);
-                FileUtils.copyFile(inputStream, dest);
-            }
-        } catch (IOException e) {
-            logger.error(e);
-        }
     }
 
     private boolean supportH264Codec() {
@@ -137,7 +123,7 @@ public class MediaCodecActivity extends AppCompatActivity {
             mMediaCodec.start();
             MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
             ByteBuffer[] inputBuffers = mMediaCodec.getInputBuffers();
-            //ByteBuffer[] outputBuffers = mMediaCodec.getOutputBuffers();
+            ByteBuffer[] outputBuffers = mMediaCodec.getOutputBuffers();
             boolean isEos = false;
             long startMs = System.currentTimeMillis();
             while (!mIsDestroyed) {

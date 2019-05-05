@@ -1,5 +1,6 @@
 package com.richie.multimedialearning.mediacodec;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -35,6 +36,7 @@ public class CodecActivity extends AppCompatActivity {
         mBtnStartRecord.setOnClickListener(viewClickListener);
         findViewById(R.id.btn_start_decode_audio).setOnClickListener(viewClickListener);
         findViewById(R.id.btn_start_encode_audio).setOnClickListener(viewClickListener);
+        findViewById(R.id.btn_start_camera).setOnClickListener(viewClickListener);
     }
 
     @Override
@@ -122,6 +124,11 @@ public class CodecActivity extends AppCompatActivity {
                             }
                         }
                     });
+                }
+                break;
+                case R.id.btn_start_camera: {
+                    Intent intent = new Intent(CodecActivity.this, CameraOpenGlActivity.class);
+                    startActivity(intent);
                 }
                 break;
                 default:

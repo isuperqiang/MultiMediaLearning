@@ -47,6 +47,9 @@
         <activity
             android:name=".opengl.OpenGLActivity"
             android:theme="@style/Theme.AppCompat.NoActionBar" />
+        <activity
+            android:name=".mediacodec.CameraOpenGlActivity"
+            android:theme="@style/Theme.AppCompat.NoActionBar" />
     </application>
 
 </manifest>

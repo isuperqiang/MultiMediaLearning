@@ -28,12 +28,12 @@ public class AudioEncoder {
     private final static int SAMPLE_RATE = 44100;
     // 通道 单声道，所有设备都支持
     private final static int CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO;
-    // 位深 16 位，所有设备都支持
+    // 精度 16 位，所有设备都支持
     private final static int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
-    // 通道数 单通道
+    // 通道数 单声道
     private static final int CHANNEL_COUNT = 1;
     // 比特率
-    private static final int BIT_RATE = 96000;
+    private static final int BIT_RATE = 96_000;
     private static final String TAG = "AudioEncoder";
     // 缓冲区字节大小
     private int mBufferSizeInBytes;

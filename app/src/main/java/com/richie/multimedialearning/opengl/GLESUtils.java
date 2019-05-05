@@ -333,6 +333,20 @@ public final class GLESUtils {
         return mvp;
     }
 
+    public static float[] changeMvpMatrix(float[] mvpMatrix, float viewWidth, float viewHeight, float textureWidth, float textureHeight) {
+        float scale = viewWidth * textureHeight / viewHeight / textureWidth;
+        if (scale == 1) {
+            return mvpMatrix;
+        } else {
+            float[] mvp = new float[16];
+            float[] tmp = new float[16];
+            Matrix.setIdentityM(tmp, 0);
+            Matrix.scaleM(tmp, 0, scale > 1 ? 1F : (1F / scale), scale > 1 ? scale : 1F, 1F);
+            Matrix.multiplyMM(mvp, 0, tmp, 0, mvpMatrix, 0);
+            return mvp;
+        }
+    }
+
     public static void createFBO(int[] fboTex, int[] fboId, int width, int height) {
         //generate fbo id
         GLES20.glGenFramebuffers(1, fboId, 0);
