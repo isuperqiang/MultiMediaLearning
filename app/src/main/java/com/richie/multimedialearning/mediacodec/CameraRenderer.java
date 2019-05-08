@@ -1,6 +1,7 @@
 package com.richie.multimedialearning.mediacodec;
 
 import android.app.Activity;
+import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
@@ -39,19 +40,20 @@ public class CameraRenderer implements GLSurfaceView.Renderer {
                     "void main() {" +
                     "  gl_FragColor = texture2D(sTexture, vTextureCoord);" +
                     "}";
+    public static final int COORDS_PER_VERTEX = 2;
     // 顶点坐标
     private static final float[] VERTEX = {   // in counterclockwise order:
-            1, 1,   // top right
-            -1, 1,  // top left
-            -1, -1, // bottom left
-            1, -1,   // bottom right
+            -1.0f, -1.0f,   // 0 bottom left
+            1.0f, -1.0f,   // 1 bottom right
+            -1.0f, 1.0f,   // 2 top left
+            1.0f, 1.0f,   // 3 top right
     };
     // 纹理坐标
     private static final float[] TEXTURE = {   // in counterclockwise order:
-            1, 0,  // top right
-            0, 0,  // top left
-            0, 1,  // bottom left
-            1, 1,  // bottom right
+            0.0f, 0.0f,     // 0 bottom left
+            1.0f, 0.0f,     // 1 bottom right
+            0.0f, 1.0f,     // 2 top left
+            1.0f, 1.0f      // 3 top right
     };
     private final ILogger logger = LoggerFactory.getLogger(CameraRenderer.class);
     // 程序句柄
@@ -77,9 +79,11 @@ public class CameraRenderer implements GLSurfaceView.Renderer {
     private SurfaceTexture mSurfaceTexture;
     private CameraHolder mCameraHolder;
     private Activity mActivity;
+    private GLSurfaceView mGLSurfaceView;
 
-    public CameraRenderer(Activity activity) {
+    public CameraRenderer(Activity activity, GLSurfaceView glSurfaceView) {
         mActivity = activity;
+        mGLSurfaceView = glSurfaceView;
         mCameraHolder = new CameraHolder();
     }
 
@@ -90,7 +94,6 @@ public class CameraRenderer implements GLSurfaceView.Renderer {
         mVerBuffer = GLESUtils.createFloatBuffer(VERTEX);
         mTexBuffer = GLESUtils.createFloatBuffer(TEXTURE);
         mTextureID = GLESUtils.createOESTexture();
-        mSurfaceTexture = new SurfaceTexture(mTextureID);
         int vertexShader = GLESUtils.createShader(GLES20.GL_VERTEX_SHADER, VERTEX_SHADER);
         int fragmentShader = GLESUtils.createShader(GLES20.GL_FRAGMENT_SHADER, FRAGMENT_SHADER);
         mProgram = GLESUtils.createProgram(vertexShader, fragmentShader);
@@ -101,16 +104,19 @@ public class CameraRenderer implements GLSurfaceView.Renderer {
         mMvpMatrixHandle = GLES20.glGetUniformLocation(mProgram, "uMVPMatrix");
         mTexMatrixHandle = GLES20.glGetUniformLocation(mProgram, "uTexMatrix");
         int texUnitHandle = GLES20.glGetAttribLocation(mProgram, "sTexture");
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glUniform1i(texUnitHandle, 0);
 
-        //mSurfaceTexture.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
-        //    @Override
-        //    public void onFrameAvailable(SurfaceTexture surfaceTexture) {
-        //
-        //    }
-        //});
+        mSurfaceTexture = new SurfaceTexture(mTextureID);
         mCameraHolder.openCamera(mActivity);
         mCameraHolder.setPreviewTexture(mSurfaceTexture);
+        mCameraHolder.setOnPreviewFrameCallback(new CameraHolder.PreviewFrameCallback() {
+            @Override
+            public void onPreviewFrame(byte[] bytes) {
+                //logger.verbose("onPreviewFrame, byteLength:{}", bytes.length);
+                mGLSurfaceView.requestRender();
+            }
+        });
         mCameraHolder.startPreview();
     }
 
@@ -118,29 +124,28 @@ public class CameraRenderer implements GLSurfaceView.Renderer {
     public void onSurfaceChanged(GL10 gl, int width, int height) {
         logger.debug("onSurfaceChanged() called. width:{}, height:{}", width, height);
         GLES20.glViewport(0, 0, width, height);
-        mMvpMatrix = GLESUtils.changeMvpMatrixCrop(width, height, CameraHolder.PREVIEW_HEIGHT, CameraHolder.PREVIEW_WIDTH);
-        GLESUtils.rotate(mMvpMatrix, 180);
-        GLESUtils.flip(mMvpMatrix, true, false);
+        Point previewSize = mCameraHolder.getPreviewSize();
+        mMvpMatrix = GLESUtils.changeMvpMatrixCrop(width, height, previewSize.y, previewSize.x);
     }
 
     @Override
     public void onDrawFrame(GL10 gl) {
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+
         mSurfaceTexture.updateTexImage();
         mSurfaceTexture.getTransformMatrix(mTexMatrix);
 
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mTextureID);
         GLES20.glUseProgram(mProgram);
         GLES20.glUniformMatrix4fv(mMvpMatrixHandle, 1, false, mMvpMatrix, 0);
         GLES20.glUniformMatrix4fv(mTexMatrixHandle, 1, false, mTexMatrix, 0);
 
         GLES20.glEnableVertexAttribArray(mPositionHandle);
-        GLES20.glVertexAttribPointer(mPositionHandle, 2, GLES20.GL_FLOAT, false, 0, mVerBuffer);
+        GLES20.glVertexAttribPointer(mPositionHandle, COORDS_PER_VERTEX, GLES20.GL_FLOAT, false, 0, mVerBuffer);
         GLES20.glEnableVertexAttribArray(mTexCoordHandle);
-        GLES20.glVertexAttribPointer(mTexCoordHandle, 2, GLES20.GL_FLOAT, false, 0, mTexBuffer);
+        GLES20.glVertexAttribPointer(mTexCoordHandle, COORDS_PER_VERTEX, GLES20.GL_FLOAT, false, 0, mTexBuffer);
 
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_FAN, 0, 4);
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, VERTEX.length / COORDS_PER_VERTEX);
         GLES20.glDisableVertexAttribArray(mPositionHandle);
         GLES20.glDisableVertexAttribArray(mTexCoordHandle);
 

@@ -2,6 +2,7 @@ package com.richie.multimedialearning.opengl;
 
 
 import android.app.Activity;
+import android.graphics.ImageFormat;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
@@ -14,13 +15,17 @@ import java.io.IOException;
 import java.util.Arrays;
 
 /**
+ * 相机管理类
+ *
  * @author Richie on 2018.08.01
  */
 public class CameraHolder {
+    private static final int BUFFER_COUNT = 4;
     public static final int PREVIEW_WIDTH = 1280;
     public static final int PREVIEW_HEIGHT = 720;
-    private final ILogger logger = LoggerFactory.getLogger(getClass());
+    private final ILogger logger = LoggerFactory.getLogger(CameraHolder.class);
     private Camera mCamera;
+    // preview size: width and height
     private Point mPreviewSize;
 
     public void setPreviewTexture(SurfaceTexture texture) {
@@ -35,10 +40,15 @@ public class CameraHolder {
 
     public void setOnPreviewFrameCallback(final PreviewFrameCallback callback) {
         if (mCamera != null) {
-            mCamera.setPreviewCallback(new Camera.PreviewCallback() {
+            for (int i = 0; i < BUFFER_COUNT; i++) {
+                byte[] buffer = new byte[mPreviewSize.x * mPreviewSize.y * ImageFormat.getBitsPerPixel(ImageFormat.NV21) / 8];
+                mCamera.addCallbackBuffer(buffer);
+            }
+            mCamera.setPreviewCallbackWithBuffer(new Camera.PreviewCallback() {
                 @Override
                 public void onPreviewFrame(byte[] data, Camera camera) {
-                    callback.onPreviewFrame(data, mPreviewSize.x, mPreviewSize.y);
+                    camera.addCallbackBuffer(data);
+                    callback.onPreviewFrame(data);
                 }
             });
         }
@@ -67,10 +77,10 @@ public class CameraHolder {
     public void openCamera(Activity activity) {
         Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
         int number = Camera.getNumberOfCameras();
-        logger.info("openCamera camera number:{}", number);
+        logger.info("openCamera camera numbers:{}", number);
         for (int i = 0; i < number; i++) {
             Camera.getCameraInfo(i, cameraInfo);
-            if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
+            if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
                 try {
                     mCamera = Camera.open(i);
                     CameraUtils.setCameraDisplayOrientation(activity, i, mCamera);
@@ -95,15 +105,13 @@ public class CameraHolder {
         }
     }
 
-    interface PreviewFrameCallback {
+    public interface PreviewFrameCallback {
         /**
-         * 预览帧
+         * camera preview frame data
          *
          * @param bytes
-         * @param width  图像的宽度
-         * @param height 图像的高度
          */
-        void onPreviewFrame(byte[] bytes, int width, int height);
+        void onPreviewFrame(byte[] bytes);
     }
 
 }
