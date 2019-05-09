@@ -29,13 +29,14 @@ public class CameraOpenGlActivity extends AppCompatActivity implements View.OnCl
     protected void onStart() {
         super.onStart();
         mGlSurfaceView.onResume();
+        mRenderer.onResume();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        mGlSurfaceView.onPause();
         mRenderer.onStop();
+        mGlSurfaceView.onPause();
     }
 
     @Override
