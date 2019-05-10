@@ -7,7 +7,7 @@ import com.richie.multimedialearning.utils.gles.drawable.Drawable2d;
 import com.richie.multimedialearning.utils.gles.drawable.Drawable2dFull;
 
 /**
- * @author Richie on 2019.05.09
+ * Program that draw texture 2D
  */
 public class ProgramTexture2d extends Program {
     // Simple vertex shader, used for all programs.

@@ -144,6 +144,15 @@ public final class FileUtils {
         return pcmFileDir;
     }
 
+    public static File getPhotoFileDir(Context context) {
+        File fileDir = getFileDir(context);
+        File photoFileDir = new File(fileDir, "photo");
+        if (!photoFileDir.exists()) {
+            photoFileDir.mkdirs();
+        }
+        return photoFileDir;
+    }
+
     public static String getPcmFilePath(Context context, String name) {
         File pcmFileDir = getPcmFileDir(context);
         File pcmFile = new File(pcmFileDir, name + ".pcm");

@@ -9,7 +9,10 @@ import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
+import android.os.AsyncTask;
 import android.util.Log;
+
+import com.richie.multimedialearning.utils.gles.program.TextureProgram;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -18,6 +21,7 @@ import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 
 import javax.microedition.khronos.egl.EGL10;
 import javax.microedition.khronos.egl.EGLConfig;
@@ -345,6 +349,92 @@ public final class GLESUtils {
             Matrix.multiplyMM(mvp, 0, tmp, 0, mvpMatrix, 0);
             return mvp;
         }
+    }
+
+    /**
+     * glReadPixels, using FBO, the output is bitmap.
+     *
+     * @param textureId texture ID
+     * @param texMatrix texture matrix, primarily intended for use with SurfaceTexture.
+     * @param mvpMatrix MVP matrix, usually identity matrix
+     * @param texWidth  texture width
+     * @param texHeight texture height
+     * @param isOes     oes or 2d texture
+     * @param listener  callback when bitmap is available
+     */
+    public static void glReadBitmap(int textureId, float[] texMatrix, float[] mvpMatrix, final int texWidth,
+                                    final int texHeight, boolean isOes, final OnReadBitmapListener listener) {
+        int[] fboId = new int[1];
+        int[] fboTex = new int[1];
+        //generate fbo id
+        GLES20.glGenFramebuffers(1, fboId, 0);
+        //generate texture
+        GLES20.glGenTextures(1, fboTex, 0);
+        //Bind Frame buffer
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, fboId[0]);
+        //Bind texture
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, fboTex[0]);
+        //Define texture parameters
+        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, texWidth, texHeight, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+        //Attach texture FBO color attachment
+        GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, fboTex[0], 0);
+
+        int[] originalViewport = new int[4];
+        GLES20.glGetIntegerv(GLES20.GL_VIEWPORT, originalViewport, 0);
+        GLES20.glViewport(0, 0, texWidth, texHeight);
+        if (isOes) {
+            TextureProgram.createTextureOES().drawFrame(textureId, texMatrix, mvpMatrix);
+        } else {
+            TextureProgram.createTexture2D().drawFrame(textureId, texMatrix, mvpMatrix);
+        }
+
+        final int textureSize = texWidth * texHeight;
+        final IntBuffer pixelBuffer = IntBuffer.allocate(textureSize);
+        GLES20.glReadPixels(0, 0, texWidth, texHeight, GL10.GL_RGBA, GL10.GL_UNSIGNED_BYTE, pixelBuffer);
+        GLES20.glFinish();
+
+        AsyncTask.execute(new Runnable() {
+            @Override
+            public void run() {
+                int[] bitmapSource = new int[textureSize];
+                int offset1, offset2;
+                int[] data = pixelBuffer.array();
+                for (int i = 0; i < texHeight; i++) {
+                    offset1 = i * texWidth;
+                    offset2 = (texHeight - i - 1) * texWidth;
+                    for (int j = 0; j < texWidth; j++) {
+                        int texturePixel = data[offset1 + j];
+                        int blue = (texturePixel >> 16) & 0x000000ff;
+                        int red = (texturePixel << 16) & 0x00ff0000;
+                        int pixel = (texturePixel & 0xff00ff00) | red | blue | 0xff000000;
+                        bitmapSource[offset2 + j] = pixel;
+                    }
+                }
+                Bitmap bitmap = Bitmap.createBitmap(bitmapSource, texWidth, texHeight, Bitmap.Config.ARGB_8888);
+                if (listener != null) {
+                    listener.onReadBitmap(bitmap);
+                }
+            }
+        });
+
+        GLES20.glViewport(originalViewport[0], originalViewport[1], originalViewport[2], originalViewport[3]);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+        GLES20.glDeleteTextures(1, fboTex, 0);
+        GLES20.glDeleteFramebuffers(1, fboId, 0);
+    }
+
+    public interface OnReadBitmapListener {
+        /**
+         * read bitmap finish
+         *
+         * @param bitmap
+         */
+        void onReadBitmap(Bitmap bitmap);
     }
 
     public static void createFBO(int[] fboTex, int[] fboId, int width, int height) {

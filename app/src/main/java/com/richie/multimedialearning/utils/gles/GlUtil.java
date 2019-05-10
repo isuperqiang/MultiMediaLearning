@@ -28,7 +28,7 @@ import java.nio.FloatBuffer;
 /**
  * Some OpenGL utility functions.
  */
-public class GlUtil {
+public final class GlUtil {
     public static final String TAG = "Grafika";
     public static final boolean DEBUG = true;
 

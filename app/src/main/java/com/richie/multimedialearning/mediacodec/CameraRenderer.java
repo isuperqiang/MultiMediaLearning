@@ -1,19 +1,29 @@
 package com.richie.multimedialearning.mediacodec;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.graphics.SurfaceTexture;
+import android.net.Uri;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.os.Environment;
+import android.widget.Toast;
 
 import com.richie.easylog.ILogger;
 import com.richie.easylog.LoggerFactory;
 import com.richie.multimedialearning.opengl.CameraHolder;
 import com.richie.multimedialearning.opengl.GLESUtils;
+import com.richie.multimedialearning.utils.BitmapUtils;
+import com.richie.multimedialearning.utils.FileUtils;
 import com.richie.multimedialearning.utils.LimitFpsUtil;
 import com.richie.multimedialearning.utils.gles.GlUtil;
-import com.richie.multimedialearning.utils.gles.program.ProgramTextureOES;
+import com.richie.multimedialearning.utils.gles.program.TextureProgram;
+
+import java.io.File;
+import java.io.IOException;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -34,7 +44,9 @@ public class CameraRenderer implements GLSurfaceView.Renderer {
     private CameraHolder mCameraHolder;
     private Activity mActivity;
     private GLSurfaceView mGLSurfaceView;
-    private ProgramTextureOES mProgramTextureOES;
+    private TextureProgram mTextureProgram;
+    private volatile boolean mCallSnapshot;
+    private volatile boolean mSnapshoting;
 
     public CameraRenderer(Activity activity, GLSurfaceView glSurfaceView) {
         mActivity = activity;
@@ -46,7 +58,7 @@ public class CameraRenderer implements GLSurfaceView.Renderer {
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         logger.debug("onSurfaceCreated() called");
         GLES20.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-        mProgramTextureOES = new ProgramTextureOES();
+        mTextureProgram = TextureProgram.createTextureOES();
         mTextureID = GlUtil.createTextureObject(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
         startPreview();
     }
@@ -65,9 +77,8 @@ public class CameraRenderer implements GLSurfaceView.Renderer {
 
         mSurfaceTexture.updateTexImage();
         mSurfaceTexture.getTransformMatrix(mTexMatrix);
-
-        mProgramTextureOES.drawFrame(mTextureID, mTexMatrix, mMvpMatrix);
-
+        mTextureProgram.drawFrame(mTextureID, mTexMatrix, mMvpMatrix);
+        snapshot();
         LimitFpsUtil.limitFrameRate(30);
     }
 
@@ -95,11 +106,49 @@ public class CameraRenderer implements GLSurfaceView.Renderer {
         mGLSurfaceView.queueEvent(new Runnable() {
             @Override
             public void run() {
-                mProgramTextureOES.release();
+                mTextureProgram.release();
             }
         });
         mCameraHolder.stopPreview();
         mCameraHolder.release();
     }
 
+    public void setSnapshot() {
+        if (mSnapshoting) {
+            return;
+        }
+        mSnapshoting = false;
+        mCallSnapshot = true;
+    }
+
+    private void snapshot() {
+        if (mCallSnapshot) {
+            logger.debug("snapshot() called");
+            mCallSnapshot = false;
+            mSnapshoting = true;
+            GLESUtils.glReadBitmap(mTextureID, mTexMatrix, GLESUtils.IDENTITY_MATRIX, mCameraHolder.getPreviewSize().y,
+                    mCameraHolder.getPreviewSize().x, true, new GLESUtils.OnReadBitmapListener() {
+                        @Override
+                        public void onReadBitmap(Bitmap bitmap) {
+                            logger.debug("onReadBitmap. {}", bitmap);
+                            mSnapshoting = false;
+                            File dcim = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
+                            File dest = new File(new File(dcim, "Camera"), FileUtils.getUUID32() + ".jpg");
+                            try {
+                                BitmapUtils.writeBitmapLocal(bitmap, dest);
+                                logger.info("write finish: {}", dest);
+                                mActivity.runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(mActivity, "保存成功", Toast.LENGTH_SHORT).show();
+                                        mActivity.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(dest)));
+                                    }
+                                });
+                            } catch (IOException e) {
+                                logger.error(e);
+                            }
+                        }
+                    });
+        }
+    }
 }

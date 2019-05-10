@@ -8,9 +8,9 @@ import com.richie.multimedialearning.utils.gles.drawable.Drawable2d;
 import com.richie.multimedialearning.utils.gles.drawable.Drawable2dFull;
 
 /**
- * Program that draw texture OES
+ * GL program and supporting functions for textured 2D shapes.
  */
-public class ProgramTextureOES extends Program {
+public class TextureProgram {
     // Simple vertex shader, used for all programs.
     private static final String VERTEX_SHADER =
             "uniform mat4 uMVPMatrix;\n" +
@@ -21,6 +21,15 @@ public class ProgramTextureOES extends Program {
                     "void main() {\n" +
                     "    gl_Position = uMVPMatrix * aPosition;\n" +
                     "    vTextureCoord = (uTexMatrix * aTextureCoord).xy;\n" +
+                    "}\n";
+
+    // Simple fragment shader for use with "normal" 2D textures.
+    private static final String FRAGMENT_SHADER_2D =
+            "precision mediump float;\n" +
+                    "varying vec2 vTextureCoord;\n" +
+                    "uniform sampler2D sTexture;\n" +
+                    "void main() {\n" +
+                    "    gl_FragColor = texture2D(sTexture, vTextureCoord);\n" +
                     "}\n";
 
     // Simple fragment shader for use with external 2D textures (e.g. what we get from
@@ -38,12 +47,63 @@ public class ProgramTextureOES extends Program {
     private int muTexMatrixLoc;
     private int maPositionLoc;
     private int maTextureCoordLoc;
+    private int mTextureTarget;
+    // Handles to the GL program and various components of it.
+    private int mProgramHandle;
+    private Drawable2d mDrawable2d;
 
-    public ProgramTextureOES() {
-        super(VERTEX_SHADER, FRAGMENT_SHADER_EXT);
+    public TextureProgram(String vertexShader, String fragmentShader, int textureTarget) {
+        mTextureTarget = textureTarget;
+        mProgramHandle = GlUtil.createProgram(vertexShader, fragmentShader);
+        mDrawable2d = new Drawable2dFull();
+        glGetLocations();
     }
 
-    @Override
+    public static TextureProgram createTexture2D() {
+        return new TextureProgram(VERTEX_SHADER, FRAGMENT_SHADER_2D, GLES20.GL_TEXTURE_2D);
+    }
+
+    public static TextureProgram createTextureOES() {
+        return new TextureProgram(VERTEX_SHADER, FRAGMENT_SHADER_EXT, GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
+    }
+
+    /**
+     * Draw frame in identity mvp matrix
+     *
+     * @param textureId
+     * @param texMatrix
+     */
+    public void drawFrame(int textureId, float[] texMatrix) {
+        drawFrame(textureId, texMatrix, GlUtil.IDENTITY_MATRIX);
+    }
+
+    /**
+     * Draw frame in specified area
+     *
+     * @param textureId
+     * @param texMatrix
+     * @param mvpMatrix
+     * @param x         viewport x
+     * @param y         viewport y
+     * @param width     viewport width
+     * @param height    viewport height
+     */
+    public void drawFrame(int textureId, float[] texMatrix, float[] mvpMatrix, int x, int y, int width, int height) {
+        int[] originalViewport = new int[4];
+        GLES20.glGetIntegerv(GLES20.GL_VIEWPORT, originalViewport, 0);
+        GLES20.glViewport(x, y, width, height);
+        drawFrame(textureId, texMatrix, mvpMatrix);
+        GLES20.glViewport(originalViewport[0], originalViewport[1], originalViewport[2], originalViewport[3]);
+    }
+
+    /**
+     * Issues the draw call.  Does the full setup on every call.
+     *
+     * @param textureId texture ID
+     * @param mvpMatrix The 4x4 projection matrix.
+     * @param texMatrix A 4x4 transformation matrix for texture coords.  (Primarily intended
+     *                  for use with SurfaceTexture.)
+     */
     public void drawFrame(int textureId, float[] texMatrix, float[] mvpMatrix) {
         GlUtil.checkGlError("draw start");
 
@@ -53,7 +113,7 @@ public class ProgramTextureOES extends Program {
 
         // Set the texture.
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, textureId);
+        GLES20.glBindTexture(mTextureTarget, textureId);
 
         // Copy the model / view / projection matrix over.
         GLES20.glUniformMatrix4fv(muMVPMatrixLoc, 1, false, mvpMatrix, 0);
@@ -88,17 +148,22 @@ public class ProgramTextureOES extends Program {
         // Done -- disable vertex array, texture, and program.
         GLES20.glDisableVertexAttribArray(maPositionLoc);
         GLES20.glDisableVertexAttribArray(maTextureCoordLoc);
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0);
+        GLES20.glBindTexture(mTextureTarget, 0);
         GLES20.glUseProgram(0);
     }
 
-    @Override
-    protected Drawable2d createDrawable2d() {
-        return new Drawable2dFull();
+    /**
+     * Releases the program.
+     * <p>
+     * The appropriate EGL context must be current (i.e. the one that was used to create
+     * the program).
+     */
+    public void release() {
+        GLES20.glDeleteProgram(mProgramHandle);
+        mProgramHandle = -1;
     }
 
-    @Override
-    protected void glGetLocations() {
+    private void glGetLocations() {
         maPositionLoc = GLES20.glGetAttribLocation(mProgramHandle, "aPosition");
         GlUtil.checkLocation(maPositionLoc, "aPosition");
         maTextureCoordLoc = GLES20.glGetAttribLocation(mProgramHandle, "aTextureCoord");

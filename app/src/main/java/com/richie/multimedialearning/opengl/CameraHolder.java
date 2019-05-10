@@ -21,8 +21,8 @@ import java.util.Arrays;
  */
 public class CameraHolder {
     private static final int BUFFER_COUNT = 4;
-    public static final int PREVIEW_WIDTH = 1280;
-    public static final int PREVIEW_HEIGHT = 720;
+    private static final int PREVIEW_WIDTH = 1920;
+    private static final int PREVIEW_HEIGHT = 1080;
     private final ILogger logger = LoggerFactory.getLogger(CameraHolder.class);
     private Camera mCamera;
     // preview size: width and height

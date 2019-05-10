@@ -9,7 +9,7 @@ import com.richie.multimedialearning.R;
 
 public class CameraOpenGlActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private CameraRenderer mRenderer;
+    private CameraRenderer mCameraRenderer;
     private GLSurfaceView mGlSurfaceView;
 
     @Override
@@ -18,8 +18,8 @@ public class CameraOpenGlActivity extends AppCompatActivity implements View.OnCl
         setContentView(R.layout.activity_camera_open_gl);
         mGlSurfaceView = findViewById(R.id.gl_surface);
         mGlSurfaceView.setEGLContextClientVersion(2);
-        mRenderer = new CameraRenderer(this, mGlSurfaceView);
-        mGlSurfaceView.setRenderer(mRenderer);
+        mCameraRenderer = new CameraRenderer(this, mGlSurfaceView);
+        mGlSurfaceView.setRenderer(mCameraRenderer);
         mGlSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
 
         findViewById(R.id.btn_take_photo).setOnClickListener(this);
@@ -29,21 +29,23 @@ public class CameraOpenGlActivity extends AppCompatActivity implements View.OnCl
     protected void onStart() {
         super.onStart();
         mGlSurfaceView.onResume();
-        mRenderer.onResume();
+        mCameraRenderer.onResume();
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        mRenderer.onStop();
+        mCameraRenderer.onStop();
         mGlSurfaceView.onPause();
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
-            case R.id.btn_take_photo:
-                break;
+            case R.id.btn_take_photo: {
+                mCameraRenderer.setSnapshot();
+            }
+            break;
             default:
         }
     }
