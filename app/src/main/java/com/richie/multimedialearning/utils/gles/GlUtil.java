@@ -30,7 +30,6 @@ import java.nio.FloatBuffer;
  */
 public final class GlUtil {
     public static final String TAG = "Grafika";
-    public static final boolean DEBUG = true;
 
     /**
      * Identity matrix for general use.  Don't modify or life will get weird.
@@ -165,35 +164,6 @@ public final class GlUtil {
     }
 
     /**
-     * Creates a texture object suitable for use with this program.
-     * <p>
-     * On exit, the texture will be bound.
-     *
-     * @param textureTarget eg: GLES20.GL_TEXTURE_2D, GLES11Ext.GL_TEXTURE_EXTERNAL_OES
-     */
-    public static int createTextureObject(int textureTarget) {
-        int[] textures = new int[1];
-        GLES20.glGenTextures(1, textures, 0);
-        GlUtil.checkGlError("glGenTextures");
-
-        int texId = textures[0];
-        GLES20.glBindTexture(textureTarget, texId);
-        GlUtil.checkGlError("glBindTexture " + texId);
-
-        GLES20.glTexParameterf(textureTarget, GLES20.GL_TEXTURE_MIN_FILTER,
-                GLES20.GL_NEAREST);
-        GLES20.glTexParameterf(textureTarget, GLES20.GL_TEXTURE_MAG_FILTER,
-                GLES20.GL_LINEAR);
-        GLES20.glTexParameteri(textureTarget, GLES20.GL_TEXTURE_WRAP_S,
-                GLES20.GL_CLAMP_TO_EDGE);
-        GLES20.glTexParameteri(textureTarget, GLES20.GL_TEXTURE_WRAP_T,
-                GLES20.GL_CLAMP_TO_EDGE);
-        GlUtil.checkGlError("glTexParameter");
-
-        return texId;
-    }
-
-    /**
      * Allocates a direct float buffer, and populates it with the float array data.
      */
     public static FloatBuffer createFloatBuffer(float[] coords) {
@@ -207,7 +177,7 @@ public final class GlUtil {
     }
 
     /**
-     * Writes GL version info to the log.
+     * Writes GL version info to the log. call on GlThread
      */
     public static void logVersionInfo() {
         Log.i(TAG, "vendor  : " + GLES20.glGetString(GLES20.GL_VENDOR));

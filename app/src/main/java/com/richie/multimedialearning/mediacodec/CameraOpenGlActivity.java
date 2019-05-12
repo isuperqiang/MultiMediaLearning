@@ -6,6 +6,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 
 import com.richie.multimedialearning.R;
+import com.richie.multimedialearning.opengl.GLESUtils;
 
 public class CameraOpenGlActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -17,7 +18,7 @@ public class CameraOpenGlActivity extends AppCompatActivity implements View.OnCl
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera_open_gl);
         mGlSurfaceView = findViewById(R.id.gl_surface);
-        mGlSurfaceView.setEGLContextClientVersion(2);
+        mGlSurfaceView.setEGLContextClientVersion(GLESUtils.getSupportGLVersion(this));
         mCameraRenderer = new CameraRenderer(this, mGlSurfaceView);
         mGlSurfaceView.setRenderer(mCameraRenderer);
         mGlSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);

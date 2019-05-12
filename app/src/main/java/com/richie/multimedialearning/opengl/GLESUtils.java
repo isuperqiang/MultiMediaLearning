@@ -4,7 +4,6 @@ import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.ConfigurationInfo;
 import android.graphics.Bitmap;
-import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
@@ -12,12 +11,9 @@ import android.opengl.Matrix;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import com.richie.multimedialearning.utils.gles.GlUtil;
 import com.richie.multimedialearning.utils.gles.program.TextureProgram;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
@@ -235,6 +231,31 @@ public final class GLESUtils {
     }
 
     /**
+     * Creates a texture object suitable for use with this program.
+     * <p>
+     * On exit, the texture will be bound.
+     *
+     * @param textureTarget eg: GLES20.GL_TEXTURE_2D, GLES11Ext.GL_TEXTURE_EXTERNAL_OES
+     */
+    public static int createTextureObject(int textureTarget) {
+        int[] textures = new int[1];
+        GLES20.glGenTextures(textures.length, textures, 0);
+        GlUtil.checkGlError("glGenTextures");
+
+        int texId = textures[0];
+        GLES20.glBindTexture(textureTarget, texId);
+        GlUtil.checkGlError("glBindTexture " + texId);
+
+        GLES20.glTexParameterf(textureTarget, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
+        GLES20.glTexParameterf(textureTarget, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(textureTarget, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(textureTarget, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+        GlUtil.checkGlError("glTexParameter");
+
+        return texId;
+    }
+
+    /**
      * Creates a texture from bitmap.
      *
      * @param bmp bitmap data
@@ -269,56 +290,11 @@ public final class GLESUtils {
         return textureHandles[0];
     }
 
-    public static int createOESTexture() {
-        int[] texture = new int[1];
-        GLES20.glEnable(GLES20.GL_TEXTURE20);
-        GLES20.glGenTextures(1, texture, 0);
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, texture[0]);
-        GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-                GL10.GL_TEXTURE_MIN_FILTER, GL10.GL_LINEAR);
-        GLES20.glTexParameterf(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-                GL10.GL_TEXTURE_MAG_FILTER, GL10.GL_LINEAR);
-        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-                GL10.GL_TEXTURE_WRAP_S, GL10.GL_CLAMP_TO_EDGE);
-        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES,
-                GL10.GL_TEXTURE_WRAP_T, GL10.GL_CLAMP_TO_EDGE);
-        return texture[0];
-    }
-
 
     public static void deleteTextureId(int[] textureId) {
         if (textureId != null && textureId.length > 0) {
             GLES20.glDeleteTextures(textureId.length, textureId, 0);
         }
-    }
-
-    public static boolean isSupportGL20(Context context) {
-        final ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        if (activityManager == null) {
-            return false;
-        }
-        final ConfigurationInfo configurationInfo = activityManager.getDeviceConfigurationInfo();
-        return configurationInfo.reqGlEsVersion >= 0x20000;
-    }
-
-    public static String readTextFileFromResource(Context context, int resourceId) throws IOException {
-        StringBuilder body = new StringBuilder();
-        BufferedReader bufferedReader = null;
-        try {
-            InputStream inputStream = context.getResources().openRawResource(resourceId);
-            InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-            bufferedReader = new BufferedReader(inputStreamReader);
-            String nextLine;
-            while ((nextLine = bufferedReader.readLine()) != null) {
-                body.append(nextLine);
-                body.append('\n');
-            }
-        } finally {
-            if (bufferedReader != null) {
-                bufferedReader.close();
-            }
-        }
-        return body.toString();
     }
 
     public static float[] changeMvpMatrixInside(float viewWidth, float viewHeight, float textureWidth, float textureHeight) {
@@ -354,43 +330,29 @@ public final class GLESUtils {
     /**
      * glReadPixels, using FBO, the output is bitmap.
      *
-     * @param textureId texture ID
-     * @param texMatrix texture matrix, primarily intended for use with SurfaceTexture.
-     * @param mvpMatrix MVP matrix, usually identity matrix
-     * @param texWidth  texture width
-     * @param texHeight texture height
-     * @param isOes     oes or 2d texture
-     * @param listener  callback when bitmap is available
+     * @param textureId      texture ID
+     * @param texMatrix      texture matrix, primarily intended for use with SurfaceTexture.
+     * @param mvpMatrix      MVP matrix, usually identity matrix
+     * @param texWidth       texture width
+     * @param texHeight      texture height
+     * @param textureProgram texture oes or 2d texture
+     * @param listener       callback when bitmap is available
      */
     public static void glReadBitmap(int textureId, float[] texMatrix, float[] mvpMatrix, final int texWidth,
-                                    final int texHeight, boolean isOes, final OnReadBitmapListener listener) {
+                                    final int texHeight, TextureProgram textureProgram, final OnReadBitmapListener listener) {
         int[] fboId = new int[1];
         int[] fboTex = new int[1];
-        //generate fbo id
-        GLES20.glGenFramebuffers(1, fboId, 0);
-        //generate texture
-        GLES20.glGenTextures(1, fboTex, 0);
+        createFBO(fboTex, fboId, texWidth, texHeight);
+
         //Bind Frame buffer
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, fboId[0]);
-        //Bind texture
+        //Bind Frame buffer
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, fboTex[0]);
-        //Define texture parameters
-        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, texWidth, texHeight, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
-        //Attach texture FBO color attachment
-        GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, fboTex[0], 0);
 
         int[] originalViewport = new int[4];
         GLES20.glGetIntegerv(GLES20.GL_VIEWPORT, originalViewport, 0);
         GLES20.glViewport(0, 0, texWidth, texHeight);
-        if (isOes) {
-            TextureProgram.createTextureOES().drawFrame(textureId, texMatrix, mvpMatrix);
-        } else {
-            TextureProgram.createTexture2D().drawFrame(textureId, texMatrix, mvpMatrix);
-        }
+        textureProgram.drawFrame(textureId, texMatrix, mvpMatrix);
 
         final int textureSize = texWidth * texHeight;
         final IntBuffer pixelBuffer = IntBuffer.allocate(textureSize);
@@ -424,8 +386,8 @@ public final class GLESUtils {
         GLES20.glViewport(originalViewport[0], originalViewport[1], originalViewport[2], originalViewport[3]);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
-        GLES20.glDeleteTextures(1, fboTex, 0);
-        GLES20.glDeleteFramebuffers(1, fboId, 0);
+        deleteTextureId(fboTex);
+        deleteFBO(fboId);
     }
 
     public interface OnReadBitmapListener {
@@ -437,24 +399,31 @@ public final class GLESUtils {
         void onReadBitmap(Bitmap bitmap);
     }
 
+    /**
+     * create frame buffer object. (FBO)
+     *
+     * @param fboTex
+     * @param fboId
+     * @param width
+     * @param height
+     */
     public static void createFBO(int[] fboTex, int[] fboId, int width, int height) {
         //generate fbo id
-        GLES20.glGenFramebuffers(1, fboId, 0);
+        GLES20.glGenFramebuffers(fboId.length, fboId, 0);
         //generate texture
-        GLES20.glGenTextures(1, fboTex, 0);
+        GLES20.glGenTextures(fboTex.length, fboTex, 0);
 
+        int texId = createTextureObject(GLES20.GL_TEXTURE_2D);
+        fboTex[0] = texId;
         //Bind Frame buffer
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, fboId[0]);
-        //Bind texture
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, fboTex[0]);
         //Define texture parameters
         GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, width, height, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
         //Attach texture FBO color attachment
         GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, fboTex[0], 0);
+        if (GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER) != GLES20.GL_FRAMEBUFFER_COMPLETE) {
+            Log.e(TAG, "glFramebufferTexture2D error");
+        }
         //we are done, reset
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
@@ -464,6 +433,16 @@ public final class GLESUtils {
         if (fboId != null && fboId.length > 0) {
             GLES20.glDeleteFramebuffers(fboId.length, fboId, 0);
         }
+    }
+
+    public static int getSupportGLVersion(Context context) {
+        final ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        final ConfigurationInfo configurationInfo = activityManager.getDeviceConfigurationInfo();
+        int version = configurationInfo.reqGlEsVersion >= 0x30000 ? 3 : 2;
+        String glEsVersion = configurationInfo.getGlEsVersion();
+        Log.e(TAG, "reqGlEsVersion: " + Integer.toHexString(configurationInfo.reqGlEsVersion)
+                + ", glEsVersion: " + glEsVersion + ", return: " + version);
+        return version;
     }
 
 }

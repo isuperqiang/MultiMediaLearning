@@ -23,8 +23,8 @@ public class OpenGLActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_open_gl);
-        boolean supportGL20 = GLESUtils.isSupportGL20(this);
-        String msg = supportGL20 ? "支持 GLES20" : "不支持 GLES20";
+        int glVersion = GLESUtils.getSupportGLVersion(this);
+        String msg = "支持 GLES " + glVersion;
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
 
         mGlSurfaceView = findViewById(R.id.gl_surface);

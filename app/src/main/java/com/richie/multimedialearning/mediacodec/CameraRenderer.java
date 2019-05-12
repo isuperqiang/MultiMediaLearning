@@ -33,20 +33,15 @@ import javax.microedition.khronos.opengles.GL10;
  */
 public class CameraRenderer implements GLSurfaceView.Renderer {
     private final ILogger logger = LoggerFactory.getLogger(CameraRenderer.class);
-    // 纹理句柄
     private int mTextureID;
-    // 顶点坐标 MVP 变换矩阵
     private float[] mMvpMatrix = new float[16];
-    // 纹理坐标变换矩阵
     private float[] mTexMatrix = new float[16];
-    // 回调数据使用的buffer索引
     private SurfaceTexture mSurfaceTexture;
     private CameraHolder mCameraHolder;
     private Activity mActivity;
     private GLSurfaceView mGLSurfaceView;
     private TextureProgram mTextureProgram;
     private volatile boolean mCallSnapshot;
-    private volatile boolean mSnapshoting;
 
     public CameraRenderer(Activity activity, GLSurfaceView glSurfaceView) {
         mActivity = activity;
@@ -57,9 +52,10 @@ public class CameraRenderer implements GLSurfaceView.Renderer {
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         logger.debug("onSurfaceCreated() called");
+        GlUtil.logVersionInfo();
         GLES20.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         mTextureProgram = TextureProgram.createTextureOES();
-        mTextureID = GlUtil.createTextureObject(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
+        mTextureID = GLESUtils.createTextureObject(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
         startPreview();
     }
 
@@ -114,10 +110,6 @@ public class CameraRenderer implements GLSurfaceView.Renderer {
     }
 
     public void setSnapshot() {
-        if (mSnapshoting) {
-            return;
-        }
-        mSnapshoting = false;
         mCallSnapshot = true;
     }
 
@@ -125,13 +117,11 @@ public class CameraRenderer implements GLSurfaceView.Renderer {
         if (mCallSnapshot) {
             logger.debug("snapshot() called");
             mCallSnapshot = false;
-            mSnapshoting = true;
             GLESUtils.glReadBitmap(mTextureID, mTexMatrix, GLESUtils.IDENTITY_MATRIX, mCameraHolder.getPreviewSize().y,
-                    mCameraHolder.getPreviewSize().x, true, new GLESUtils.OnReadBitmapListener() {
+                    mCameraHolder.getPreviewSize().x, mTextureProgram, new GLESUtils.OnReadBitmapListener() {
                         @Override
                         public void onReadBitmap(Bitmap bitmap) {
                             logger.debug("onReadBitmap. {}", bitmap);
-                            mSnapshoting = false;
                             File dcim = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
                             File dest = new File(new File(dcim, "Camera"), FileUtils.getUUID32() + ".jpg");
                             try {
