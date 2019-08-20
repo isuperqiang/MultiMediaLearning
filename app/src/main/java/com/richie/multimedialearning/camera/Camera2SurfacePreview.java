@@ -27,6 +27,7 @@ import com.richie.easylog.ILogger;
 import com.richie.easylog.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author Richie on 2019.03.07
@@ -74,12 +75,10 @@ public class Camera2SurfacePreview extends SurfaceView implements SurfaceHolder.
             } else {
                 for (String str : idList) {
                     CameraCharacteristics characteristics = manager.getCameraCharacteristics(str);
-                    if (characteristics != null) {
-                        final int supportLevel = characteristics.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL);
-                        if (supportLevel == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY) {
-                            notFull = false;
-                            break;
-                        }
+                    Integer iSupportLevel = characteristics.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL);
+                    if (iSupportLevel != null && iSupportLevel == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY) {
+                        notFull = false;
+                        break;
                     }
                 }
             }
@@ -97,9 +96,12 @@ public class Camera2SurfacePreview extends SurfaceView implements SurfaceHolder.
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         logger.debug("surfaceDestroyed() called with: holder = [" + holder + "]");
-        closeCameraPreview();
-        mCameraDevice.close();
-        mImageReader.close();
+        mCallbackHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                closeCamera();
+            }
+        });
         mCallbackHandler.getLooper().quitSafely();
     }
 
@@ -116,8 +118,13 @@ public class Camera2SurfacePreview extends SurfaceView implements SurfaceHolder.
         HandlerThread handlerThread = new HandlerThread("camera2");
         handlerThread.start();
         mCallbackHandler = new Handler(handlerThread.getLooper());
-        checkCamera();
-        openCamera();
+        mCallbackHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                checkCamera();
+                openCamera();
+            }
+        });
     }
 
     private void openCamera() {
@@ -131,26 +138,23 @@ public class Camera2SurfacePreview extends SurfaceView implements SurfaceHolder.
 
         CameraManager cameraManager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
         try {
+            mImageReader = ImageReader.newInstance(MAX_PREVIEW_WIDTH, MAX_PREVIEW_HEIGHT, ImageFormat.YUV_420_888, 2);
+            mImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
+                @Override
+                public void onImageAvailable(ImageReader reader) {
+                    Image image = reader.acquireLatestImage();
+                    //我们可以将这帧数据转成字节数组，类似于Camera1的PreviewCallback回调的预览帧数据
+                    //ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+                    //byte[] data = new byte[buffer.remaining()];
+                    //buffer.get(data);
+                    image.close();
+                }
+            }, mCallbackHandler);
             cameraManager.openCamera(mCameraId, new CameraDevice.StateCallback() {
                 @Override
                 public void onOpened(@NonNull CameraDevice camera) {
                     logger.debug("onOpened");
                     mCameraDevice = camera;
-
-                    mImageReader = ImageReader.newInstance(MAX_PREVIEW_WIDTH, MAX_PREVIEW_HEIGHT, ImageFormat.YUV_420_888, 8);
-                    mImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
-                        @Override
-                        public void onImageAvailable(ImageReader reader) {
-                            logger.verbose("onImageAvailable");
-                            Image image = reader.acquireLatestImage();
-                            //我们可以将这帧数据转成字节数组，类似于Camera1的PreviewCallback回调的预览帧数据
-                            //ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-                            //byte[] data = new byte[buffer.remaining()];
-                            //buffer.get(data);
-                            image.close();
-                        }
-                    }, mCallbackHandler);
-
                     createCameraPreview();
                 }
 
@@ -159,12 +163,6 @@ public class Camera2SurfacePreview extends SurfaceView implements SurfaceHolder.
                     logger.debug("onDisconnected");
                     camera.close();
                     mCameraDevice = null;
-                }
-
-                @Override
-                public void onClosed(@NonNull CameraDevice camera) {
-                    super.onClosed(camera);
-                    logger.debug("onClosed() called with: camera = [" + camera + "]");
                 }
 
                 @Override
@@ -182,12 +180,15 @@ public class Camera2SurfacePreview extends SurfaceView implements SurfaceHolder.
     private void createCameraPreview() {
         try {
             final CaptureRequest.Builder captureRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
-            Surface surface = mSurfaceHolder.getSurface();
-            captureRequestBuilder.addTarget(surface);
+            captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
+            captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_AUTO);
+            Surface previewSurface = mSurfaceHolder.getSurface();
+            captureRequestBuilder.addTarget(previewSurface);
             Surface imageReaderSurface = mImageReader.getSurface();
             captureRequestBuilder.addTarget(imageReaderSurface);
-            captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
-            mCameraDevice.createCaptureSession(Arrays.asList(surface, imageReaderSurface), new CameraCaptureSession.StateCallback() {
+            List<Surface> surfaceList = Arrays.asList(previewSurface, imageReaderSurface);
+            mCameraDevice.createCaptureSession(surfaceList, new CameraCaptureSession.StateCallback() {
                 @Override
                 public void onConfigured(@NonNull CameraCaptureSession session) {
                     logger.debug("onConfigured");
@@ -198,7 +199,6 @@ public class Camera2SurfacePreview extends SurfaceView implements SurfaceHolder.
                     } catch (CameraAccessException e) {
                         logger.error(e);
                     }
-
                 }
 
                 @Override
@@ -211,16 +211,18 @@ public class Camera2SurfacePreview extends SurfaceView implements SurfaceHolder.
         }
     }
 
-    private void closeCameraPreview() {
+    private void closeCamera() {
         if (mCameraCaptureSession != null) {
-            try {
-                mCameraCaptureSession.stopRepeating();
-                mCameraCaptureSession.abortCaptures();
-                mCameraCaptureSession.close();
-            } catch (Exception e) {
-                logger.error(e);
-            }
+            mCameraCaptureSession.close();
             mCameraCaptureSession = null;
+        }
+        if (mCameraDevice != null) {
+            mCameraDevice.close();
+            mCameraDevice = null;
+        }
+        if (mImageReader != null) {
+            mImageReader.close();
+            mImageReader = null;
         }
     }
 
