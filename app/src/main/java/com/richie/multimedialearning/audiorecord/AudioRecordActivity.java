@@ -16,6 +16,8 @@ import com.richie.multimedialearning.utils.FileUtils;
 
 /**
  * 使用 AudioRecord 录音
+ *
+ * @author Richie on 2018.10.15
  */
 public class AudioRecordActivity extends AppCompatActivity implements View.OnTouchListener {
     private final ILogger logger = LoggerFactory.getLogger(AudioRecordActivity.class);
@@ -33,29 +35,13 @@ public class AudioRecordActivity extends AppCompatActivity implements View.OnTou
         mBtnRecord.setOnTouchListener(this);
     }
 
-    private void startRecord() {
-        mAudioRecorder = new AudioRecorder(this);
-        mAudioRecorder.createDefaultAudio(FileUtils.getUUID32());
-        mAudioRecorder.setRecordStreamListener(new AudioRecorder.RecordStreamListener() {
-
-            @Override
-            public void onRecording(byte[] bytes, int offset, int length) {
-                logger.verbose("onRecording. offset:{}, length:{}", offset, length);
-            }
-
-            @Override
-            public void finishRecord() {
-                logger.info("finishRecord");
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(AudioRecordActivity.this, "录音完成", Toast.LENGTH_SHORT).show();
-                    }
-                });
-            }
-        });
-        mAudioRecorder.startRecord();
-        Toast.makeText(this, "录音开始", Toast.LENGTH_SHORT).show();
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mAudioRecorder != null) {
+            mAudioRecorder.release();
+            mAudioRecorder = null;
+        }
     }
 
     @Override
@@ -74,19 +60,63 @@ public class AudioRecordActivity extends AppCompatActivity implements View.OnTou
                 }, mLongPressTimeout);
             }
             break;
-            case MotionEvent.ACTION_UP:
-            case MotionEvent.ACTION_CANCEL: {
+            case MotionEvent.ACTION_UP: {
                 mCanceled = true;
                 mBtnRecord.setText("长按录音");
                 mMainHandler.removeCallbacksAndMessages(null);
                 if (mAudioRecorder != null) {
                     mAudioRecorder.stopRecord();
-                    mAudioRecorder = null;
                 }
             }
             break;
             default:
         }
-        return false;
+        return true;
     }
+
+    private void startRecord() {
+        mAudioRecorder = new AudioRecorder(this);
+        mAudioRecorder.createDefaultAudio(FileUtils.getUUID32());
+        mAudioRecorder.setRecordStreamListener(new AudioRecorder.RecordStreamListener() {
+            @Override
+            public void onStart() {
+                logger.debug("onStart");
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(AudioRecordActivity.this, "录音开始", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+
+            @Override
+            public void onRecord(byte[] bytes, int length) {
+                logger.verbose("onRecord. byte length:{}", length);
+            }
+
+            @Override
+            public void onStop() {
+                logger.debug("onStop");
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(AudioRecordActivity.this, "录音结束", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String message) {
+                logger.warn("onError: {}", message);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(AudioRecordActivity.this, "录音错误 " + message, Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        });
+        mAudioRecorder.startRecord();
+    }
+
 }

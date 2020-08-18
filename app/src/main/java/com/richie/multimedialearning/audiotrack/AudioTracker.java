@@ -1,18 +1,13 @@
 package com.richie.multimedialearning.audiotrack;
 
-import android.content.Context;
 import android.media.AudioAttributes;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.io.BufferedInputStream;
-import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,6 +15,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
+ * 使用 AudioTrack 播放音频
+ *
  * @author Richie on 2018.10.26
  */
 public class AudioTracker {
@@ -31,7 +28,7 @@ public class AudioTracker {
     // 位深 16 位，所有设备都支持
     private final static int AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
     // 缓冲区字节大小
-    private int mBufferSizeInBytes = 0;
+    private int mBufferSizeInBytes;
     // 播放对象
     private AudioTrack mAudioTrack;
     // 文件名
@@ -40,14 +37,7 @@ public class AudioTracker {
     private volatile Status mStatus = Status.STATUS_NO_READY;
     // 单任务线程池
     private ExecutorService mExecutorService = Executors.newSingleThreadExecutor();
-
-    private Handler mMainHandler = new Handler(Looper.getMainLooper());
-
-    private Context mContext;
-
-    public AudioTracker(Context context) {
-        mContext = context;
-    }
+    private AudioPlayListener mAudioPlayListener;
 
     public void createAudioTrack(String filePath) throws IllegalStateException {
         mFilePath = filePath;
@@ -79,6 +69,8 @@ public class AudioTracker {
 
     /**
      * 开始播放
+     *
+     * @throws IllegalStateException
      */
     public void start() throws IllegalStateException {
         if (mStatus == Status.STATUS_NO_READY || mAudioTrack == null) {
@@ -94,13 +86,10 @@ public class AudioTracker {
                 try {
                     playAudioData();
                 } catch (IOException e) {
-                    Log.e(TAG, e.getMessage());
-                    mMainHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(mContext, "播放出错", Toast.LENGTH_SHORT).show();
-                        }
-                    });
+                    Log.e(TAG, "playAudioData: ", e);
+                    if (mAudioPlayListener != null) {
+                        mAudioPlayListener.onError(e.getMessage());
+                    }
                 }
             }
         });
@@ -108,35 +97,34 @@ public class AudioTracker {
     }
 
     private void playAudioData() throws IOException {
-        InputStream dis = null;
+        InputStream bis = null;
         try {
-            mMainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(mContext, "播放开始", Toast.LENGTH_SHORT).show();
-                }
-            });
-            dis = new DataInputStream(new BufferedInputStream(new FileInputStream(mFilePath)));
+            if (mAudioPlayListener != null) {
+                mAudioPlayListener.onStart();
+            }
+            bis = new BufferedInputStream(new FileInputStream(mFilePath));
             byte[] bytes = new byte[mBufferSizeInBytes];
             int length;
             mAudioTrack.play();
-            // write 是阻塞的方法
-            while ((length = dis.read(bytes)) != -1 && mStatus == Status.STATUS_START) {
+            // write 是阻塞方法
+            while ((length = bis.read(bytes)) != -1 && mStatus == Status.STATUS_START) {
                 mAudioTrack.write(bytes, 0, length);
             }
-            mMainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    Toast.makeText(mContext, "播放结束", Toast.LENGTH_SHORT).show();
-                }
-            });
+            if (mAudioPlayListener != null) {
+                mAudioPlayListener.onStop();
+            }
         } finally {
-            if (dis != null) {
-                dis.close();
+            if (bis != null) {
+                bis.close();
             }
         }
     }
 
+    /**
+     * 停止播放
+     *
+     * @throws IllegalStateException
+     */
     public void stop() throws IllegalStateException {
         Log.d(TAG, "===stop===");
         if (mStatus == Status.STATUS_NO_READY || mStatus == Status.STATUS_READY) {
@@ -148,6 +136,9 @@ public class AudioTracker {
         }
     }
 
+    /**
+     * 释放资源
+     */
     public void release() {
         Log.d(TAG, "==release===");
         mStatus = Status.STATUS_NO_READY;
@@ -155,6 +146,10 @@ public class AudioTracker {
             mAudioTrack.release();
             mAudioTrack = null;
         }
+    }
+
+    public void setAudioPlayListener(AudioPlayListener audioPlayListener) {
+        mAudioPlayListener = audioPlayListener;
     }
 
     /**
@@ -169,5 +164,28 @@ public class AudioTracker {
         STATUS_START,
         //停止
         STATUS_STOP
+    }
+
+    /**
+     * invoked on work thread
+     */
+    public interface AudioPlayListener {
+
+        /**
+         * 开始
+         */
+        void onStart();
+
+        /**
+         * 结束
+         */
+        void onStop();
+
+        /**
+         * 发生错误
+         *
+         * @param message
+         */
+        void onError(String message);
     }
 }

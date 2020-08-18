@@ -12,9 +12,12 @@ import com.richie.easylog.ILogger;
 import com.richie.easylog.LoggerFactory;
 import com.richie.multimedialearning.utils.BitmapUtils;
 
-import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
+ * 使用 SurfaceView 绘制一张图片
+ *
  * @author Richie on 2018.10.22
  */
 public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback, Runnable {
@@ -26,13 +29,11 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
     private Bitmap mBitmap;
 
     public MySurfaceView(Context context) {
-        super(context);
-        init();
+        this(context, null);
     }
 
     public MySurfaceView(Context context, AttributeSet attrs) {
-        super(context, attrs);
-        init();
+        this(context, attrs, 0);
     }
 
     public MySurfaceView(Context context, AttributeSet attrs, int defStyleAttr) {
@@ -57,10 +58,14 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         logger.info("onSurfaceChanged. format:{}, width:{}, height:{}", format, width, height);
-        mBitmap = BitmapUtils.decodeSampledBitmapFromFile(new File(getContext().getExternalFilesDir(null),
-                "template.jpg"), width, height);
-        mIsDrawing = true;
-        mThread.start();
+        try {
+            InputStream is = getContext().getAssets().open("template.jpg");
+            mBitmap = BitmapUtils.decodeSampledBitmapFromStream(is, width, height);
+            mIsDrawing = true;
+            mThread.start();
+        } catch (IOException e) {
+            logger.error(e);
+        }
     }
 
     @Override
@@ -73,7 +78,7 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
     @Override
     public void run() {
         while (mIsDrawing) {
-            logger.debug("draw canvas");
+            //logger.verbose("draw canvas");
             Canvas canvas = mSurfaceHolder.lockCanvas();
             if (canvas != null) {
                 try {
