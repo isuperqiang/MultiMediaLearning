@@ -143,25 +143,7 @@ public class AudioRecorder {
             mAudioRecord.release();
             mAudioRecord = null;
         }
-
-        // 方便查看结果
-        makePCMFileToWAVFile();
-        mPcmFileName = null;
     }
-
-    /**
-     * 取消录音
-     */
-    public void cancel() {
-        mPcmFileName = null;
-        if (mAudioRecord != null) {
-            mAudioRecord.release();
-            mAudioRecord = null;
-        }
-
-        mStatus = Status.STATUS_NO_READY;
-    }
-
 
     /**
      * 将音频信息写入文件
@@ -172,9 +154,7 @@ public class AudioRecorder {
         if (file.exists()) {
             file.delete();
         }
-        OutputStream bos = null;
-        try {
-            bos = new BufferedOutputStream(new FileOutputStream(file));
+        try (OutputStream bos = new BufferedOutputStream(new FileOutputStream(file))) {
             int bufferSizeInBytes = mBufferSizeInBytes;
             byte[] audioData = new byte[bufferSizeInBytes];
             if (mRecordStreamListener != null) {
@@ -195,12 +175,9 @@ public class AudioRecorder {
                     Log.w(TAG, "writeAudioDataToFile error code: " + readSize);
                 }
             }
-            mAudioRecord.stop();
             bos.flush();
         } finally {
-            if (bos != null) {
-                bos.close();// 关闭写入流
-            }
+            mAudioRecord.stop();
             if (mRecordStreamListener != null) {
                 mRecordStreamListener.onStop();
             }
@@ -210,7 +187,7 @@ public class AudioRecorder {
     /**
      * 将单个pcm文件转化为wav文件
      */
-    private void makePCMFileToWAVFile() {
+    public void makePCMFileToWAVFile() {
         if (TextUtils.isEmpty(mPcmFileName)) {
             return;
         }
@@ -219,7 +196,8 @@ public class AudioRecorder {
             @Override
             public void run() {
                 String wavFilePath = FileUtils.getWavFilePath(mContext, pcmFileName);
-                if (PcmToWav.makePcmFileToWavFile(FileUtils.getPcmFilePath(mContext, pcmFileName), wavFilePath, false)) {
+                boolean result = PcmToWav.makePcmFileToWavFile(FileUtils.getPcmFilePath(mContext, pcmFileName), wavFilePath, false);
+                if (result) {
                     //操作成功
                     Log.i(TAG, "保存wav文件成功 " + wavFilePath);
                 } else {

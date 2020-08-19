@@ -80,6 +80,7 @@ public class AudioTracker {
             throw new IllegalStateException("正在播放...");
         }
         Log.d(TAG, "===start===");
+        mStatus = Status.STATUS_START;
         mExecutorService.execute(new Runnable() {
             @Override
             public void run() {
@@ -93,29 +94,29 @@ public class AudioTracker {
                 }
             }
         });
-        mStatus = Status.STATUS_START;
     }
 
+    /**
+     * 播放 PCM 音频
+     *
+     * @throws IOException
+     */
     private void playAudioData() throws IOException {
-        InputStream bis = null;
-        try {
+        try (InputStream bis = new BufferedInputStream(new FileInputStream(mFilePath))) {
             if (mAudioPlayListener != null) {
                 mAudioPlayListener.onStart();
             }
-            bis = new BufferedInputStream(new FileInputStream(mFilePath));
             byte[] bytes = new byte[mBufferSizeInBytes];
             int length;
             mAudioTrack.play();
             // write 是阻塞方法
-            while ((length = bis.read(bytes)) != -1 && mStatus == Status.STATUS_START) {
+            while (mStatus == Status.STATUS_START && (length = bis.read(bytes)) != -1) {
                 mAudioTrack.write(bytes, 0, length);
             }
+        } finally {
+            mAudioTrack.stop();
             if (mAudioPlayListener != null) {
                 mAudioPlayListener.onStop();
-            }
-        } finally {
-            if (bis != null) {
-                bis.close();
             }
         }
     }
@@ -131,8 +132,6 @@ public class AudioTracker {
             throw new IllegalStateException("播放尚未开始");
         } else {
             mStatus = Status.STATUS_STOP;
-            mAudioTrack.stop();
-            release();
         }
     }
 

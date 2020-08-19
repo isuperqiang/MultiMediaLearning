@@ -2,6 +2,7 @@ package com.richie.multimedialearning.audiorecord;
 
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -24,7 +25,7 @@ public class AudioRecordActivity extends AppCompatActivity implements View.OnTou
     private AudioRecorder mAudioRecorder;
     private Button mBtnRecord;
     private int mLongPressTimeout = ViewConfiguration.getLongPressTimeout();
-    private Handler mMainHandler = new Handler();
+    private Handler mMainHandler = new Handler(Looper.getMainLooper());
     private boolean mCanceled;
 
     @Override
@@ -38,10 +39,7 @@ public class AudioRecordActivity extends AppCompatActivity implements View.OnTou
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (mAudioRecorder != null) {
-            mAudioRecorder.release();
-            mAudioRecorder = null;
-        }
+        stopRecord();
     }
 
     @Override
@@ -64,9 +62,7 @@ public class AudioRecordActivity extends AppCompatActivity implements View.OnTou
                 mCanceled = true;
                 mBtnRecord.setText("长按录音");
                 mMainHandler.removeCallbacksAndMessages(null);
-                if (mAudioRecorder != null) {
-                    mAudioRecorder.stopRecord();
-                }
+                stopRecord();
             }
             break;
             default:
@@ -97,6 +93,8 @@ public class AudioRecordActivity extends AppCompatActivity implements View.OnTou
             @Override
             public void onStop() {
                 logger.debug("onStop");
+                mAudioRecorder.release();
+                mAudioRecorder.makePCMFileToWAVFile();
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -117,6 +115,16 @@ public class AudioRecordActivity extends AppCompatActivity implements View.OnTou
             }
         });
         mAudioRecorder.startRecord();
+    }
+
+    private void stopRecord() {
+        if (mAudioRecorder != null) {
+            try {
+                mAudioRecorder.stopRecord();
+            } catch (IllegalStateException e) {
+                logger.warn(e);
+            }
+        }
     }
 
 }

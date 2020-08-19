@@ -12,8 +12,7 @@ import com.richie.easylog.ILogger;
 import com.richie.easylog.LoggerFactory;
 import com.richie.multimedialearning.utils.BitmapUtils;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.File;
 
 /**
  * 使用 SurfaceView 绘制一张图片
@@ -58,14 +57,10 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         logger.info("onSurfaceChanged. format:{}, width:{}, height:{}", format, width, height);
-        try {
-            InputStream is = getContext().getAssets().open("template.jpg");
-            mBitmap = BitmapUtils.decodeSampledBitmapFromStream(is, width, height);
-            mIsDrawing = true;
-            mThread.start();
-        } catch (IOException e) {
-            logger.error(e);
-        }
+        mBitmap = BitmapUtils.decodeSampledBitmapFromFile(new File(getContext().getExternalFilesDir(null),
+                "assets/template.jpg"), width, height);
+        mIsDrawing = true;
+        mThread.start();
     }
 
     @Override

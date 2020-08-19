@@ -57,6 +57,7 @@ public class AudioTrackActivity extends AppCompatActivity implements View.OnClic
                     @Override
                     public void onStop() {
                         logger.debug("onStop");
+                        mAudioTracker.release();
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
@@ -91,9 +92,8 @@ public class AudioTrackActivity extends AppCompatActivity implements View.OnClic
         if (mAudioTracker != null) {
             try {
                 mAudioTracker.stop();
-                mAudioTracker = null;
             } catch (IllegalStateException e) {
-                logger.error(e);
+                logger.warn(e);
             }
         }
     }
