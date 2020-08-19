@@ -23,7 +23,6 @@ import java.io.IOException;
 public class CodecActivity extends AppCompatActivity {
     private final ILogger logger = LoggerFactory.getLogger(CodecActivity.class);
     private AudioEncoder mAudioEncoder;
-    private File mFile;
     private Button mBtnStartRecord;
     private boolean mIsRecording;
 
@@ -65,13 +64,13 @@ public class CodecActivity extends AppCompatActivity {
                     } else {
                         mBtnStartRecord.setText("停止录音和编码音频");
                         mIsRecording = true;
-                        mFile = new File(FileUtils.getAacFileDir(CodecActivity.this), FileUtils.getUUID32() + ".aac");
-                        logger.info("out file:{}", mFile.getAbsolutePath());
+                        File file = new File(FileUtils.getAacFileDir(CodecActivity.this), FileUtils.getUUID32() + ".aac");
+                        logger.info("out file:{}", file.getAbsolutePath());
                         mAudioEncoder = new AudioEncoder();
                         mAudioEncoder.createAudio();
                         try {
                             mAudioEncoder.createMediaCodec();
-                            mAudioEncoder.start(mFile);
+                            mAudioEncoder.start(file);
                         } catch (IOException e) {
                             logger.error(e);
                         }

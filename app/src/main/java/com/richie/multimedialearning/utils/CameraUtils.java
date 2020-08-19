@@ -1,7 +1,11 @@
 package com.richie.multimedialearning.utils;
 
 import android.app.Activity;
+import android.content.Context;
 import android.hardware.Camera;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraManager;
+import android.os.Build;
 import android.util.Log;
 import android.view.Surface;
 
@@ -20,6 +24,32 @@ public final class CameraUtils {
     public static final int PREVIEW_HEIGHT = 1080;
 
     private CameraUtils() {
+    }
+
+    public static boolean hasCamera2(Context context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            return false;
+        }
+        try {
+            CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+            String[] idList = manager.getCameraIdList();
+            boolean notFull = true;
+            if (idList.length == 0) {
+                notFull = false;
+            } else {
+                for (String str : idList) {
+                    CameraCharacteristics characteristics = manager.getCameraCharacteristics(str);
+                    Integer iSupportLevel = characteristics.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL);
+                    if (iSupportLevel != null && iSupportLevel == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY) {
+                        notFull = false;
+                        break;
+                    }
+                }
+            }
+            return !notFull;
+        } catch (Exception exp) {
+            return false;
+        }
     }
 
     public static int getCameraOrientation(int cameraId) {

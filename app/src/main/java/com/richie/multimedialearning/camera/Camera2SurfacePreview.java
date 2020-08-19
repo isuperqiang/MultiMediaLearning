@@ -5,13 +5,11 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
-import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
-import android.media.Image;
 import android.media.ImageReader;
 import android.os.Build;
 import android.os.Handler;
@@ -48,44 +46,16 @@ public class Camera2SurfacePreview extends SurfaceView implements SurfaceHolder.
     private Handler mCallbackHandler;
 
     public Camera2SurfacePreview(Context context) {
-        super(context);
-        init();
+        this(context, null);
     }
 
     public Camera2SurfacePreview(Context context, AttributeSet attrs) {
-        super(context, attrs);
-        init();
+        this(context, attrs, 0);
     }
 
     public Camera2SurfacePreview(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
-    }
-
-    public static boolean hasCamera2(Context context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            return false;
-        }
-        try {
-            CameraManager manager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
-            String[] idList = manager.getCameraIdList();
-            boolean notFull = true;
-            if (idList.length == 0) {
-                notFull = false;
-            } else {
-                for (String str : idList) {
-                    CameraCharacteristics characteristics = manager.getCameraCharacteristics(str);
-                    Integer iSupportLevel = characteristics.get(CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL);
-                    if (iSupportLevel != null && iSupportLevel == CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY) {
-                        notFull = false;
-                        break;
-                    }
-                }
-            }
-            return !notFull;
-        } catch (Exception exp) {
-            return false;
-        }
     }
 
     @Override
@@ -113,9 +83,9 @@ public class Camera2SurfacePreview extends SurfaceView implements SurfaceHolder.
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-        boolean b = hasCamera2(mContext);
-        logger.debug("surfaceCreated() hasCamera2:{}", b);
-        HandlerThread handlerThread = new HandlerThread("camera2");
+        boolean hasCamera2 = CameraUtils.hasCamera2(mContext);
+        logger.debug("surfaceCreated() hasCamera2:{}", hasCamera2);
+        HandlerThread handlerThread = new HandlerThread("camera2_callback");
         handlerThread.start();
         mCallbackHandler = new Handler(handlerThread.getLooper());
         mCallbackHandler.post(new Runnable() {
@@ -142,12 +112,12 @@ public class Camera2SurfacePreview extends SurfaceView implements SurfaceHolder.
             mImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
                 @Override
                 public void onImageAvailable(ImageReader reader) {
-                    Image image = reader.acquireLatestImage();
+                    //Image image = reader.acquireLatestImage();
                     //我们可以将这帧数据转成字节数组，类似于Camera1的PreviewCallback回调的预览帧数据
                     //ByteBuffer buffer = image.getPlanes()[0].getBuffer();
                     //byte[] data = new byte[buffer.remaining()];
                     //buffer.get(data);
-                    image.close();
+                    //image.close();
                 }
             }, mCallbackHandler);
             cameraManager.openCamera(mCameraId, new CameraDevice.StateCallback() {
@@ -196,7 +166,7 @@ public class Camera2SurfacePreview extends SurfaceView implements SurfaceHolder.
                     CaptureRequest captureRequest = captureRequestBuilder.build();
                     try {
                         session.setRepeatingRequest(captureRequest, null, null);
-                    } catch (CameraAccessException e) {
+                    } catch (Exception e) {
                         logger.error(e);
                     }
                 }
@@ -240,10 +210,6 @@ public class Camera2SurfacePreview extends SurfaceView implements SurfaceHolder.
                 if (lensFacing != null && lensFacing == CameraCharacteristics.LENS_FACING_FRONT) {
                     mCameraId = s;
                     break;
-                    //StreamConfigurationMap map = cameraCharacteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-                    //int[] outputFormats = map.getOutputFormats();
-                    //Size[] outputSizes = map.getOutputSizes(SurfaceHolder.class);
-                    //logger.debug("format:{}, size:{}", Arrays.toString(outputFormats), Arrays.toString(outputSizes));
                 }
             }
             logger.debug("front camera available:{}", mCameraId);
@@ -251,4 +217,5 @@ public class Camera2SurfacePreview extends SurfaceView implements SurfaceHolder.
             logger.error(e);
         }
     }
+
 }

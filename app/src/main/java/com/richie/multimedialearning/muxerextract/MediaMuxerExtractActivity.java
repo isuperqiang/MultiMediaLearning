@@ -23,9 +23,10 @@ import java.nio.ByteBuffer;
  * https://mp.weixin.qq.com/s?timestamp=1556713288&src=3&ver=1&signature=O*pikadNlafbj88qn-Qy4*TJlpfOJfe65DikvyxR6Q4lJEGfOAtxsI6eBie1XnGGLt6ON0aNdGWnw4E-Kbfqv6mZGJckaCioc-PmeZxygVUzu7*ec8CxORCd3WcX5bAgHbJ1AnIN1WTGLAj*v9lJwkJ9qmJm6SxmshqE9T*6a9M=
  */
 public class MediaMuxerExtractActivity extends AppCompatActivity implements View.OnClickListener {
-    public static final String OUTPUT_VIDEO = "output_video.mp4";
-    public static final String OUTPUT_AUDIO = "output_audio.mp3";
-    private static final String VIDEO_SOURCE = "input.mp4";
+    public static final String ASSETS_DIR = "assets/";
+    public static final String OUTPUT_VIDEO = ASSETS_DIR + "output_video.mp4";
+    public static final String OUTPUT_AUDIO = ASSETS_DIR + "output_audio.mp3";
+    private static final String VIDEO_SOURCE = ASSETS_DIR + "input.mp4";
     private final ILogger logger = LoggerFactory.getLogger(MediaMuxerExtractActivity.class);
 
     @Override
@@ -60,8 +61,9 @@ public class MediaMuxerExtractActivity extends AppCompatActivity implements View
         MediaMuxer mediaMuxer = null;
         try {
             File fileDir = FileUtils.getFileDir(this);
+            String sourcePath = new File(fileDir, VIDEO_SOURCE).getAbsolutePath();
             // 设置视频源
-            mediaExtractor.setDataSource(new File(fileDir, VIDEO_SOURCE).getAbsolutePath());
+            mediaExtractor.setDataSource(sourcePath);
             // 轨道索引 ID
             int videoIndex = -1;
             // 视频轨道格式信息
@@ -72,7 +74,7 @@ public class MediaMuxerExtractActivity extends AppCompatActivity implements View
             for (int i = 0; i < trackCount; i++) {
                 MediaFormat format = mediaExtractor.getTrackFormat(i);
                 String mimeType = format.getString(MediaFormat.KEY_MIME);
-                // //找到要分离的视频轨
+                // 找到要分离的视频轨
                 if (mimeType.startsWith("video/")) {
                     videoIndex = i;
                     mediaFormat = format;
@@ -152,14 +154,18 @@ public class MediaMuxerExtractActivity extends AppCompatActivity implements View
                 mediaExtractor.advance();
             }
 
-            logger.info("finish extract video, path:{}", outPath);
+            logger.info("extract video finish, path:{}", outPath);
             Toast.makeText(this, "分离视频完成", Toast.LENGTH_SHORT).show();
         } catch (IOException e) {
             logger.error(e);
         } finally {
             if (mediaMuxer != null) {
-                mediaMuxer.stop();
-                mediaMuxer.release();
+                try {
+                    mediaMuxer.stop();
+                    mediaMuxer.release();
+                } catch (IllegalStateException e) {
+                    logger.warn(e);
+                }
             }
             mediaExtractor.release();
         }
@@ -172,7 +178,8 @@ public class MediaMuxerExtractActivity extends AppCompatActivity implements View
         MediaMuxer mediaMuxer = null;
         try {
             File fileDir = FileUtils.getFileDir(this);
-            mediaExtractor.setDataSource(new File(fileDir, VIDEO_SOURCE).getAbsolutePath());
+            String sourcePath = new File(fileDir, VIDEO_SOURCE).getAbsolutePath();
+            mediaExtractor.setDataSource(sourcePath);
             int trackCount = mediaExtractor.getTrackCount();
             MediaFormat mediaFormat = null;
             int audioIndex = -1;
@@ -209,7 +216,7 @@ public class MediaMuxerExtractActivity extends AppCompatActivity implements View
 
             String outPath = new File(fileDir, OUTPUT_AUDIO).getAbsolutePath();
             mediaMuxer = new MediaMuxer(outPath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
-            int writeAudioIndex = mediaMuxer.addTrack(mediaFormat);
+            int trackIndex = mediaMuxer.addTrack(mediaFormat);
             ByteBuffer byteBuffer = ByteBuffer.allocate(maxInputSize);
             MediaCodec.BufferInfo bufferInfo = new MediaCodec.BufferInfo();
             mediaMuxer.start();
@@ -223,18 +230,22 @@ public class MediaMuxerExtractActivity extends AppCompatActivity implements View
                 bufferInfo.flags = mediaExtractor.getSampleFlags();
                 bufferInfo.offset = 0;
                 bufferInfo.presentationTimeUs = mediaExtractor.getSampleTime();
-                mediaMuxer.writeSampleData(writeAudioIndex, byteBuffer, bufferInfo);
+                mediaMuxer.writeSampleData(trackIndex, byteBuffer, bufferInfo);
                 mediaExtractor.advance();
             }
 
-            logger.info("finish extract audio, path:{}", outPath);
+            logger.info("extract audio finish, path:{}", outPath);
             Toast.makeText(this, "分离音频完成", Toast.LENGTH_SHORT).show();
         } catch (IOException e) {
             logger.error(e);
         } finally {
             if (mediaMuxer != null) {
-                mediaMuxer.stop();
-                mediaMuxer.release();
+                try {
+                    mediaMuxer.stop();
+                    mediaMuxer.release();
+                } catch (IllegalStateException e) {
+                    logger.warn(e);
+                }
             }
             mediaExtractor.release();
         }
@@ -249,7 +260,8 @@ public class MediaMuxerExtractActivity extends AppCompatActivity implements View
         MediaMuxer mediaMuxer = null;
         try {
             File fileDir = FileUtils.getFileDir(this);
-            videoExtractor.setDataSource(new File(fileDir, OUTPUT_VIDEO).getAbsolutePath());
+            String videoSourcePath = new File(fileDir, OUTPUT_VIDEO).getAbsolutePath();
+            videoExtractor.setDataSource(videoSourcePath);
             MediaFormat videoFormat = null;
             int videoTrackIndex = -1;
             int videoTrackCount = videoExtractor.getTrackCount();
@@ -266,7 +278,8 @@ public class MediaMuxerExtractActivity extends AppCompatActivity implements View
                 return;
             }
 
-            audioExtractor.setDataSource(new File(fileDir, OUTPUT_AUDIO).getAbsolutePath());
+            String audioSourcePath = new File(fileDir, OUTPUT_AUDIO).getAbsolutePath();
+            audioExtractor.setDataSource(audioSourcePath);
             MediaFormat audioFormat = null;
             int audioTrackIndex = -1;
 
@@ -326,7 +339,7 @@ public class MediaMuxerExtractActivity extends AppCompatActivity implements View
                 audioExtractor.advance();
             }
 
-            logger.info("finish muxer media, path:{}", outPath);
+            logger.info("muxer media finish, path:{}", outPath);
             Toast.makeText(this, "混合音视频完成", Toast.LENGTH_SHORT).show();
         } catch (IOException e) {
             logger.error(e);
@@ -338,4 +351,5 @@ public class MediaMuxerExtractActivity extends AppCompatActivity implements View
             audioExtractor.release();
         }
     }
+
 }

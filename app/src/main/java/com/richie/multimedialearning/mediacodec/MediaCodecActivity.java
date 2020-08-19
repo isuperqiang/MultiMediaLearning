@@ -60,8 +60,6 @@ public class MediaCodecActivity extends AppCompatActivity {
     }
 
     private class MySurfaceCallback implements SurfaceHolder.Callback, Runnable {
-        private Thread mThread;
-        private MediaExtractor mMediaExtractor;
         private MediaCodec mMediaCodec;
         private Surface mSurface;
         private volatile boolean mIsDestroyed;
@@ -76,8 +74,8 @@ public class MediaCodecActivity extends AppCompatActivity {
         @Override
         public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
             logger.debug("surfaceChanged() called with: holder = [" + holder + "], format = [" + format + "], width = [" + width + "], height = [" + height + "]");
-            mThread = new Thread(this);
-            mThread.start();
+            Thread thread = new Thread(this);
+            thread.start();
         }
 
         @Override
@@ -88,23 +86,23 @@ public class MediaCodecActivity extends AppCompatActivity {
 
         @Override
         public void run() {
-            mMediaExtractor = new MediaExtractor();
+            MediaExtractor mediaExtractor = new MediaExtractor();
             try {
-                mMediaExtractor.setDataSource(new File(FileUtils.getFileDir(MediaCodecActivity.this), VIDEO_SOURCE_PATH).getAbsolutePath());
+                mediaExtractor.setDataSource(new File(FileUtils.getFileDir(MediaCodecActivity.this), VIDEO_SOURCE_PATH).getAbsolutePath());
             } catch (IOException e) {
                 logger.error(e);
             }
 
-            for (int i = 0, j = mMediaExtractor.getTrackCount(); i < j; i++) {
-                MediaFormat trackFormat = mMediaExtractor.getTrackFormat(i);
+            for (int i = 0, j = mediaExtractor.getTrackCount(); i < j; i++) {
+                MediaFormat trackFormat = mediaExtractor.getTrackFormat(i);
                 String mimeType = trackFormat.getString(MediaFormat.KEY_MIME);
                 if (mimeType.startsWith("video/")) {
-                    mMediaExtractor.selectTrack(i);
+                    mediaExtractor.selectTrack(i);
                     int width = trackFormat.getInteger(MediaFormat.KEY_WIDTH);
                     int height = trackFormat.getInteger(MediaFormat.KEY_HEIGHT);
                     //int rotation = trackFormat.getInteger(MediaFormat.KEY_ROTATION);
                     logger.info("mimeType:{}, sampleTime:{}, width:{}, height:{}",
-                            mimeType, mMediaExtractor.getSampleTime(), width, height);
+                            mimeType, mediaExtractor.getSampleTime(), width, height);
                     try {
                         mMediaCodec = MediaCodec.createDecoderByType(mimeType);
                         mMediaCodec.configure(trackFormat, mSurface, null, 0);
@@ -131,14 +129,14 @@ public class MediaCodecActivity extends AppCompatActivity {
                     int inputBufferId = mMediaCodec.dequeueInputBuffer(10000);
                     if (inputBufferId >= 0) {
                         ByteBuffer inputBuffer = inputBuffers[inputBufferId];
-                        int sampleSize = mMediaExtractor.readSampleData(inputBuffer, 0);
+                        int sampleSize = mediaExtractor.readSampleData(inputBuffer, 0);
                         if (sampleSize < 0) {
                             logger.info("end of stream");
                             mMediaCodec.queueInputBuffer(inputBufferId, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
                             isEos = true;
                         } else {
-                            mMediaCodec.queueInputBuffer(inputBufferId, 0, sampleSize, mMediaExtractor.getSampleTime(), 0);
-                            mMediaExtractor.advance();
+                            mMediaCodec.queueInputBuffer(inputBufferId, 0, sampleSize, mediaExtractor.getSampleTime(), 0);
+                            mediaExtractor.advance();
                         }
                     }
                 }
@@ -172,7 +170,7 @@ public class MediaCodecActivity extends AppCompatActivity {
 
             mMediaCodec.stop();
             mMediaCodec.release();
-            mMediaExtractor.release();
+            mediaExtractor.release();
         }
     }
 
