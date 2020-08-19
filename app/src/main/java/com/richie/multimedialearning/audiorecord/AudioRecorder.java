@@ -4,6 +4,7 @@ import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.richie.multimedialearning.utils.FileUtils;
@@ -18,6 +19,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
+ * 使用 AudioRecord 录音
+ *
  * @author Richie on 2018.10.15
  */
 public class AudioRecorder {
@@ -46,7 +49,7 @@ public class AudioRecorder {
     private Context mContext;
 
     public AudioRecorder(Context context) {
-        mContext = context;
+        mContext = context.getApplicationContext();
     }
 
     /**
@@ -83,6 +86,8 @@ public class AudioRecorder {
 
     /**
      * 开始录音
+     *
+     * @throws IllegalStateException
      */
     public void startRecord() throws IllegalStateException {
         if (mStatus == Status.STATUS_NO_READY || mAudioRecord == null) {
@@ -104,7 +109,10 @@ public class AudioRecorder {
                 try {
                     writeAudioDataToFile();
                 } catch (IOException e) {
-                    Log.e(TAG, "writeDataToFile: ", e);
+                    Log.e(TAG, "writeAudioDataToFile: ", e);
+                    if (mRecordStreamListener != null) {
+                        mRecordStreamListener.onError(e.getMessage());
+                    }
                 }
             }
         });
@@ -112,6 +120,8 @@ public class AudioRecorder {
 
     /**
      * 停止录音
+     *
+     * @throws IllegalStateException
      */
     public void stopRecord() throws IllegalStateException {
         Log.d(TAG, "===stopRecord===");
@@ -119,8 +129,6 @@ public class AudioRecorder {
             throw new IllegalStateException("录音尚未开始");
         } else {
             mStatus = Status.STATUS_STOP;
-            mAudioRecord.stop();
-            release();
         }
     }
 
@@ -136,13 +144,15 @@ public class AudioRecorder {
             mAudioRecord = null;
         }
 
+        // 方便查看结果
         makePCMFileToWAVFile();
+        mPcmFileName = null;
     }
 
     /**
      * 取消录音
      */
-    public void canel() {
+    public void cancel() {
         mPcmFileName = null;
         if (mAudioRecord != null) {
             mAudioRecord.release();
@@ -165,29 +175,34 @@ public class AudioRecorder {
         OutputStream bos = null;
         try {
             bos = new BufferedOutputStream(new FileOutputStream(file));
-            byte[] audioData = new byte[mBufferSizeInBytes];
+            int bufferSizeInBytes = mBufferSizeInBytes;
+            byte[] audioData = new byte[bufferSizeInBytes];
+            if (mRecordStreamListener != null) {
+                mRecordStreamListener.onStart();
+            }
             while (mStatus == Status.STATUS_START) {
-                int readSize = mAudioRecord.read(audioData, 0, mBufferSizeInBytes);
-                if (readSize > 0) {
+                int readSize = mAudioRecord.read(audioData, 0, bufferSizeInBytes);
+                if (readSize >= 0) {
                     try {
                         bos.write(audioData, 0, readSize);
                         if (mRecordStreamListener != null) {
-                            mRecordStreamListener.onRecording(audioData, 0, readSize);
+                            mRecordStreamListener.onRecord(audioData, readSize);
                         }
                     } catch (IOException e) {
                         Log.e(TAG, "writeAudioDataToFile", e);
                     }
                 } else {
-                    Log.w(TAG, "writeAudioDataToFile readSize: " + readSize);
+                    Log.w(TAG, "writeAudioDataToFile error code: " + readSize);
                 }
             }
+            mAudioRecord.stop();
             bos.flush();
-            if (mRecordStreamListener != null) {
-                mRecordStreamListener.finishRecord();
-            }
         } finally {
             if (bos != null) {
                 bos.close();// 关闭写入流
+            }
+            if (mRecordStreamListener != null) {
+                mRecordStreamListener.onStop();
             }
         }
     }
@@ -196,11 +211,15 @@ public class AudioRecorder {
      * 将单个pcm文件转化为wav文件
      */
     private void makePCMFileToWAVFile() {
+        if (TextUtils.isEmpty(mPcmFileName)) {
+            return;
+        }
+        final String pcmFileName = mPcmFileName;
         mExecutorService.execute(new Runnable() {
             @Override
             public void run() {
-                String wavFilePath = FileUtils.getWavFilePath(mContext, mPcmFileName);
-                if (PcmToWav.makePcmFileToWavFile(FileUtils.getPcmFilePath(mContext, mPcmFileName), wavFilePath, false)) {
+                String wavFilePath = FileUtils.getWavFilePath(mContext, pcmFileName);
+                if (PcmToWav.makePcmFileToWavFile(FileUtils.getPcmFilePath(mContext, pcmFileName), wavFilePath, false)) {
                     //操作成功
                     Log.i(TAG, "保存wav文件成功 " + wavFilePath);
                 } else {
@@ -230,22 +249,35 @@ public class AudioRecorder {
     }
 
     /**
-     * invoked from work thread
+     * invoked on work thread
      */
     public interface RecordStreamListener {
+
+        /**
+         * 开始
+         */
+        void onStart();
+
         /**
          * 录音过程中
          *
          * @param bytes
-         * @param offset
          * @param length
          */
-        void onRecording(byte[] bytes, int offset, int length);
+        void onRecord(byte[] bytes, int length);
 
         /**
-         * 录音完成
+         * 结束
          */
-        void finishRecord();
+        void onStop();
+
+        /**
+         * 发生错误
+         *
+         * @param message
+         */
+        void onError(String message);
     }
+
 }
 
