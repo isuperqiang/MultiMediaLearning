@@ -71,9 +71,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         } else if (which == 1) {
                             previewType = CameraPreviewActivity.TYPE_TEXTURE_VIEW_CAMERA;
                         } else if (which == 2) {
-                            previewType = CameraPreviewActivity.TYPE_SURFACE_VIEW_CAMER2;
+                            previewType = CameraPreviewActivity.TYPE_SURFACE_VIEW_CAMERA2;
                         } else {
-                            previewType = CameraPreviewActivity.TYPE_TEXTURE_VIEW_CAMER2;
+                            previewType = CameraPreviewActivity.TYPE_TEXTURE_VIEW_CAMERA2;
                         }
                         Intent intent = new Intent(MainActivity.this, CameraPreviewActivity.class);
                         intent.putExtra(CameraPreviewActivity.PREVIEW_TYPE, previewType);

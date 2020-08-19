@@ -15,25 +15,22 @@ import com.richie.multimedialearning.utils.ThreadHelper;
 import java.io.IOException;
 
 /**
+ * 使用 SurfaceView 预览相机画面
+ *
  * @author Richie on 2018.08.01
- * 使用 SurfaceView 预览
  */
 public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.Callback {
     private final ILogger logger = LoggerFactory.getLogger(CameraSurfacePreview.class);
-    private static final int MAX_PREVIEW_WIDTH = 1280;
-    private static final int MAX_PREVIEW_HEIGHT = 720;
     private SurfaceHolder mSurfaceHolder;
     private Camera mCamera;
     private Activity mActivity;
 
     public CameraSurfacePreview(Context context) {
-        super(context);
-        init();
+        this(context, null);
     }
 
     public CameraSurfacePreview(Context context, AttributeSet attrs) {
-        super(context, attrs);
-        init();
+        this(context, attrs, 0);
     }
 
     public CameraSurfacePreview(Context context, AttributeSet attrs, int defStyleAttr) {
@@ -80,7 +77,6 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
         logger.debug("openCamera");
         Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
         int number = Camera.getNumberOfCameras();
-
         for (int i = 0; i < number; i++) {
             Camera.getCameraInfo(i, cameraInfo);
             if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
@@ -88,7 +84,9 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
                     mCamera = Camera.open(i);
                     CameraUtils.setCameraDisplayOrientation(mActivity, i, mCamera);
                     Camera.Parameters params = mCamera.getParameters();
-                    CameraUtils.choosePreviewSize(params, MAX_PREVIEW_WIDTH, MAX_PREVIEW_HEIGHT);
+                    CameraUtils.choosePreviewSize(params, CameraUtils.PREVIEW_WIDTH, CameraUtils.PREVIEW_HEIGHT);
+                    CameraUtils.chooseFrameRate(params, 30);
+                    CameraUtils.setFocusModes(params);
                     mCamera.setParameters(params);
                     logger.info("Camera opened");
                 } catch (Exception e) {
@@ -102,7 +100,7 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
     private void startPreviewDisplay() {
         if (mCamera != null) {
             try {
-                // 设置 NV21 数据回调
+                // 设置 NV21 数据回调，发生在 worker 线程
                 mCamera.setPreviewCallback(new Camera.PreviewCallback() {
                     @Override
                     public void onPreviewFrame(byte[] data, Camera camera) {

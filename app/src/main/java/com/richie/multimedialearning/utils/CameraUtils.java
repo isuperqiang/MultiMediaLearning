@@ -13,6 +13,11 @@ import java.util.List;
 public final class CameraUtils {
     private static final String TAG = "CameraUtils";
     private static boolean DEBUG = false;
+    /**
+     * 相机宽高
+     */
+    public static final int PREVIEW_WIDTH = 1920;
+    public static final int PREVIEW_HEIGHT = 1080;
 
     private CameraUtils() {
     }

@@ -25,19 +25,19 @@ import android.view.SurfaceView;
 
 import com.richie.easylog.ILogger;
 import com.richie.easylog.LoggerFactory;
+import com.richie.multimedialearning.utils.CameraUtils;
 
 import java.util.Arrays;
 import java.util.List;
 
 /**
- * @author Richie on 2019.03.07
- * https://juejin.im/post/5a33a5106fb9a04525782db5
  * 使用 Camera2/SurfaceView 预览
+ * https://juejin.im/post/5a33a5106fb9a04525782db5
+ *
+ * @author Richie on 2019.03.07
  */
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public class Camera2SurfacePreview extends SurfaceView implements SurfaceHolder.Callback {
-    private static final int MAX_PREVIEW_WIDTH = 1920;
-    private static final int MAX_PREVIEW_HEIGHT = 1080;
     private final ILogger logger = LoggerFactory.getLogger(Camera2SurfacePreview.class);
     private String mCameraId;
     private Context mContext;
@@ -138,7 +138,7 @@ public class Camera2SurfacePreview extends SurfaceView implements SurfaceHolder.
 
         CameraManager cameraManager = (CameraManager) mContext.getSystemService(Context.CAMERA_SERVICE);
         try {
-            mImageReader = ImageReader.newInstance(MAX_PREVIEW_WIDTH, MAX_PREVIEW_HEIGHT, ImageFormat.YUV_420_888, 2);
+            mImageReader = ImageReader.newInstance(CameraUtils.PREVIEW_WIDTH, CameraUtils.PREVIEW_HEIGHT, ImageFormat.YUV_420_888, 2);
             mImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
                 @Override
                 public void onImageAvailable(ImageReader reader) {

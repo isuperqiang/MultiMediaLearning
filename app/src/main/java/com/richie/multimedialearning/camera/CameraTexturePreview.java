@@ -15,24 +15,21 @@ import com.richie.multimedialearning.utils.ThreadHelper;
 import java.io.IOException;
 
 /**
+ * 使用 TextureView 预览相机画面
+ *
  * @author Richie on 2018.10.27
- * 使用 TextureView 预览
  */
 public class CameraTexturePreview extends TextureView implements TextureView.SurfaceTextureListener {
     private final ILogger logger = LoggerFactory.getLogger(CameraTexturePreview.class);
-    private static final int MAX_PREVIEW_WIDTH = 1280;
-    private static final int MAX_PREVIEW_HEIGHT = 720;
     private Camera mCamera;
     private Activity mActivity;
 
     public CameraTexturePreview(Context context) {
-        super(context);
-        init();
+        this(context, null);
     }
 
     public CameraTexturePreview(Context context, AttributeSet attrs) {
-        super(context, attrs);
-        init();
+        this(context, attrs, 0);
     }
 
     public CameraTexturePreview(Context context, AttributeSet attrs, int defStyleAttr) {
@@ -62,6 +59,7 @@ public class CameraTexturePreview extends TextureView implements TextureView.Sur
     public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
         logger.info("onSurfaceTextureSizeChanged. width:{}, height:{}", width, height);
         // Ignored, Camera does all the work for us
+        surface.setDefaultBufferSize(CameraUtils.PREVIEW_HEIGHT, CameraUtils.PREVIEW_WIDTH);
     }
 
     @Override
@@ -78,7 +76,7 @@ public class CameraTexturePreview extends TextureView implements TextureView.Sur
 
     @Override
     public void onSurfaceTextureUpdated(SurfaceTexture surface) {
-        // Invoked every time there's a new Camera preview frame
+        // called every time there's a new Camera preview frame
     }
 
     private void openCamera() {
@@ -92,7 +90,9 @@ public class CameraTexturePreview extends TextureView implements TextureView.Sur
                     mCamera = Camera.open(i);
                     CameraUtils.setCameraDisplayOrientation(mActivity, i, mCamera);
                     Camera.Parameters params = mCamera.getParameters();
-                    params.setPreviewSize(MAX_PREVIEW_WIDTH, MAX_PREVIEW_HEIGHT);
+                    params.setPreviewSize(CameraUtils.PREVIEW_WIDTH, CameraUtils.PREVIEW_HEIGHT);
+                    CameraUtils.chooseFrameRate(params, 30);
+                    CameraUtils.setFocusModes(params);
                     mCamera.setParameters(params);
                 } catch (Exception e) {
                     logger.error("openCamera error", e);
@@ -105,6 +105,7 @@ public class CameraTexturePreview extends TextureView implements TextureView.Sur
     private void startPreviewDisplay(SurfaceTexture surfaceTexture) {
         if (mCamera != null) {
             try {
+                // 设置 NV21 数据回调，发生在 worker 线程
                 mCamera.setPreviewCallback(new Camera.PreviewCallback() {
                     @Override
                     public void onPreviewFrame(byte[] data, Camera camera) {
