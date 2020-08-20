@@ -40,7 +40,7 @@ public class AudioTrackActivity extends AppCompatActivity implements View.OnClic
         switch (v.getId()) {
             case R.id.btn_start_play_audio: {
                 mAudioTracker = new AudioTracker();
-                File pcmFile = new File(FileUtils.getExternalAssetsDir(this), "test.pcm");
+                File pcmFile = new File(FileUtils.getExternalAssetsDir(this), "sample.pcm");
                 mAudioTracker.createAudioTrack(pcmFile.getAbsolutePath());
                 mAudioTracker.setAudioPlayListener(new AudioTracker.AudioPlayListener() {
                     @Override

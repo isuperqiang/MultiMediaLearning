@@ -26,7 +26,7 @@ import java.nio.ByteBuffer;
  * MediaCodec
  */
 public class MediaCodecActivity extends AppCompatActivity {
-    private static final String VIDEO_SOURCE_PATH = "input.mp4";
+    private static final String VIDEO_SOURCE_PATH = "sample.mp4";
     private final ILogger logger = LoggerFactory.getLogger(MediaCodecActivity.class);
 
     @Override

@@ -58,7 +58,7 @@ public class MySurfaceView extends SurfaceView implements SurfaceHolder.Callback
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         logger.info("onSurfaceChanged. format:{}, width:{}, height:{}", format, width, height);
         mBitmap = BitmapUtils.decodeSampledBitmapFromFile(new File(getContext().getExternalFilesDir(null),
-                "assets/template.jpg"), width, height);
+                "assets/sample.jpg"), width, height);
         mIsDrawing = true;
         mThread.start();
     }

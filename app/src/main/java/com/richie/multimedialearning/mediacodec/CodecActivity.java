@@ -82,7 +82,7 @@ public class CodecActivity extends AppCompatActivity {
                         @Override
                         public void run() {
                             // 44.1kHz采样率，单通道，16位深
-                            File pcmFile = new File(FileUtils.getExternalAssetsDir(CodecActivity.this), "test.pcm");
+                            File pcmFile = new File(FileUtils.getExternalAssetsDir(CodecActivity.this), "sample.pcm");
                             File aacFile = new File(FileUtils.getAacFileDir(CodecActivity.this), "test_output.aac");
                             if (aacFile.exists()) {
                                 aacFile.delete();
@@ -108,7 +108,7 @@ public class CodecActivity extends AppCompatActivity {
                         @Override
                         public void run() {
                             // 44.1kHz采样率，单通道
-                            File aacFile = new File(FileUtils.getExternalAssetsDir(CodecActivity.this), "test.aac");
+                            File aacFile = new File(FileUtils.getExternalAssetsDir(CodecActivity.this), "sample.aac");
                             File pcmFile = new File(FileUtils.getPcmFileDir(CodecActivity.this), "test_output.pcm");
                             try {
                                 AacPcmCoder.decodeAacToPcm(aacFile, pcmFile);

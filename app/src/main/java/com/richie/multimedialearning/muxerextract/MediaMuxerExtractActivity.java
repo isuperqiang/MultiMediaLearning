@@ -28,7 +28,7 @@ public class MediaMuxerExtractActivity extends AppCompatActivity implements View
     public static final String ASSETS_DIR = "assets/";
     public static final String OUTPUT_VIDEO = ASSETS_DIR + "output_video.mp4";
     public static final String OUTPUT_AUDIO = ASSETS_DIR + "output_audio.mp3";
-    private static final String VIDEO_SOURCE = ASSETS_DIR + "input.mp4";
+    private static final String VIDEO_SOURCE = ASSETS_DIR + "sample.mp4";
     private final ILogger logger = LoggerFactory.getLogger(MediaMuxerExtractActivity.class);
 
     @Override
@@ -56,7 +56,7 @@ public class MediaMuxerExtractActivity extends AppCompatActivity implements View
         }
     }
 
-    // 分离视频的视频轨，输入视频 input.mp4，输出视频 output_video.mp4
+    // 分离视频的视频轨，输入视频 sample.mp4，输出视频 output_video.mp4
     private void extractVideo() {
         logger.info("extractVideo() start");
         MediaExtractor mediaExtractor = new MediaExtractor();
@@ -92,7 +92,10 @@ public class MediaMuxerExtractActivity extends AppCompatActivity implements View
             // 格式类型
             String mimeType = mediaFormat.getString(MediaFormat.KEY_MIME);
             // 视频的比特率
-            int bitRate = mediaFormat.getInteger(MediaFormat.KEY_BIT_RATE);
+            int bitRate = 0;
+            if (mediaFormat.containsKey(MediaFormat.KEY_BIT_RATE)) {
+                bitRate = mediaFormat.getInteger(MediaFormat.KEY_BIT_RATE);
+            }
             // 视频宽度
             int width = mediaFormat.getInteger(MediaFormat.KEY_WIDTH);
             // 视频高度
@@ -173,7 +176,7 @@ public class MediaMuxerExtractActivity extends AppCompatActivity implements View
         }
     }
 
-    // 分离视频的音频轨, 输入视频 input.mp4, 输出的音频 output_audio.mp3
+    // 分离视频的音频轨, 输入视频 sample.mp4, 输出的音频 output_audio.mp3
     private void extractAudio() {
         logger.info("extractAudio() start");
         MediaExtractor mediaExtractor = new MediaExtractor();

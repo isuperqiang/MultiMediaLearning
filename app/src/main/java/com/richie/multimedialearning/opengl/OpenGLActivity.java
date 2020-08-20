@@ -33,7 +33,7 @@ public class OpenGLActivity extends AppCompatActivity {
         GLSurfaceView.Renderer renderer = null;
         int type = getIntent().getIntExtra(TYPE, TYPE_IMAGE);
         if (type == TYPE_IMAGE) {
-            File imageFile = new File(FileUtils.getExternalAssetsDir(this), "cat.jpg");
+            File imageFile = new File(FileUtils.getExternalAssetsDir(this), "sample.jpg");
             renderer = new ImageRenderer(imageFile.getAbsolutePath());
         } else {
             renderer = new TriangleRenderer();
