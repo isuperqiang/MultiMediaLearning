@@ -20,7 +20,9 @@ import com.richie.multimedialearning.opengl.OpenGLActivity;
 import com.richie.multimedialearning.surface.SurfaceActivity;
 
 /**
- * Main 主界面
+ * 功能选择界面
+ *
+ * @author Richie on 2018.10.17
  */
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -58,22 +60,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 intent = new Intent(this, AudioTrackActivity.class);
                 break;
             case R.id.btn_camera_preview: {
-                String[] colors = {"SurfaceView Camera", "TextureView Camera", "SurfaceView Camera2"};
+                String[] colors = {"SurfaceView Camera", "TextureView Camera"};
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
                 builder.setTitle("Pick preview type");
                 builder.setItems(colors, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         // the user clicked on colors[which]
-                        int previewType;
+                        int previewType = 0;
                         if (which == 0) {
                             previewType = CameraPreviewActivity.TYPE_SURFACE_VIEW_CAMERA;
                         } else if (which == 1) {
                             previewType = CameraPreviewActivity.TYPE_TEXTURE_VIEW_CAMERA;
                         } else if (which == 2) {
                             previewType = CameraPreviewActivity.TYPE_SURFACE_VIEW_CAMERA2;
-                        } else {
-                            previewType = CameraPreviewActivity.TYPE_TEXTURE_VIEW_CAMERA2;
                         }
                         Intent intent = new Intent(MainActivity.this, CameraPreviewActivity.class);
                         intent.putExtra(CameraPreviewActivity.PREVIEW_TYPE, previewType);

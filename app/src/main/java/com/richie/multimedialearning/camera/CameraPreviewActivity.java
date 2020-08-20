@@ -15,7 +15,6 @@ public class CameraPreviewActivity extends AppCompatActivity {
     public static final int TYPE_SURFACE_VIEW_CAMERA = 902;
     public static final int TYPE_SURFACE_VIEW_CAMERA2 = 932;
     public static final int TYPE_TEXTURE_VIEW_CAMERA = 203;
-    public static final int TYPE_TEXTURE_VIEW_CAMERA2 = 213;
     private int mPreviewType;
 
     @Override
@@ -30,21 +29,20 @@ public class CameraPreviewActivity extends AppCompatActivity {
 
     private void previewCamera() {
         ConstraintLayout layout = findViewById(R.id.cl_root);
-        ConstraintLayout.LayoutParams params = new ConstraintLayout.LayoutParams(0, ConstraintLayout.LayoutParams.WRAP_CONTENT);
-//        params.dimensionRatio = "9:16";
+        ConstraintLayout.LayoutParams params = new ConstraintLayout.LayoutParams(0, 0);
+        // 避免相机画面被拉伸
+        params.dimensionRatio = "9:16";
         params.leftToLeft = ConstraintLayout.LayoutParams.PARENT_ID;
         params.rightToRight = ConstraintLayout.LayoutParams.PARENT_ID;
         params.topToTop = ConstraintLayout.LayoutParams.PARENT_ID;
+        params.bottomToBottom = ConstraintLayout.LayoutParams.PARENT_ID;
         if (mPreviewType == TYPE_SURFACE_VIEW_CAMERA) {
             CameraSurfacePreview cameraPreview = new CameraSurfacePreview(this);
             layout.addView(cameraPreview, params);
         } else if (mPreviewType == TYPE_TEXTURE_VIEW_CAMERA) {
             CameraTexturePreview cameraPreview = new CameraTexturePreview(this);
             layout.addView(cameraPreview, params);
-        } else if (mPreviewType == TYPE_SURFACE_VIEW_CAMERA2) {
-            Camera2SurfacePreview cameraPreview = new Camera2SurfacePreview(this);
-            layout.addView(cameraPreview, params);
-            //} else if (mPreviewType == TYPE_TEXTURE_VIEW_CAMERA2) {
         }
     }
+
 }

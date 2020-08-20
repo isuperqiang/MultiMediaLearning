@@ -15,6 +15,8 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.ArrayBlockingQueue;
 
 /**
+ * H264 编码器
+ *
  * @author Richie on 2018.11.10
  */
 public class H264Encoder {
@@ -26,12 +28,6 @@ public class H264Encoder {
     private int width, height, framerate;
     private BufferedOutputStream outputStream;
 
-    /***
-     * 构造函数
-     * @param width
-     * @param height
-     * @param framerate
-     */
     public H264Encoder(int width, int height, int framerate) {
         this.width = width;
         this.height = height;

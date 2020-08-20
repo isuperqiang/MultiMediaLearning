@@ -109,7 +109,7 @@ public class CameraTexturePreview extends TextureView implements TextureView.Sur
                 mCamera.setPreviewCallback(new Camera.PreviewCallback() {
                     @Override
                     public void onPreviewFrame(byte[] data, Camera camera) {
-                        logger.verbose("onPreviewFrame data length:{}", data != null ? data.length : 0);
+//                        logger.verbose("onPreviewFrame data length:{}", data != null ? data.length : 0);
                     }
                 });
                 mCamera.setPreviewTexture(surfaceTexture);
@@ -126,6 +126,7 @@ public class CameraTexturePreview extends TextureView implements TextureView.Sur
             try {
                 mCamera.stopPreview();
                 mCamera.setPreviewTexture(null);
+                mCamera.setPreviewCallback(null);
                 mCamera.release();
             } catch (IOException e) {
                 logger.error("releaseCamera error", e);

@@ -37,7 +37,7 @@ public final class FileUtils {
      *
      * @param context
      */
-    public static void copyAssets2FileDir(Context context) {
+    public static void copyAssetsToFileDir(Context context) {
         AssetManager assets = context.getAssets();
         List<String> fileTree = new ArrayList<>(16);
         listAssetsRecursively(assets, "", fileTree);

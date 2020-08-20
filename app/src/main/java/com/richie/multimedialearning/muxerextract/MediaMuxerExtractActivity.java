@@ -21,6 +21,8 @@ import java.nio.ByteBuffer;
 /**
  * 音视频混合和分离
  * https://mp.weixin.qq.com/s?timestamp=1556713288&src=3&ver=1&signature=O*pikadNlafbj88qn-Qy4*TJlpfOJfe65DikvyxR6Q4lJEGfOAtxsI6eBie1XnGGLt6ON0aNdGWnw4E-Kbfqv6mZGJckaCioc-PmeZxygVUzu7*ec8CxORCd3WcX5bAgHbJ1AnIN1WTGLAj*v9lJwkJ9qmJm6SxmshqE9T*6a9M=
+ *
+ * @author Richie on 2018.10.17
  */
 public class MediaMuxerExtractActivity extends AppCompatActivity implements View.OnClickListener {
     public static final String ASSETS_DIR = "assets/";
@@ -48,7 +50,7 @@ public class MediaMuxerExtractActivity extends AppCompatActivity implements View
                 extractVideo();
                 break;
             case R.id.btn_mix_media:
-                combineVideo();
+                mixVideo();
                 break;
             default:
         }
@@ -253,8 +255,8 @@ public class MediaMuxerExtractActivity extends AppCompatActivity implements View
 
     // 将上面分离出的 output_video.mp4 和分离出 output_audio.mp4 合成原来完整的视频
     // 输入视频 output_video.mp4，输入音频 output_audio.mp4 合成视频 output.mp4
-    private void combineVideo() {
-        logger.info("combineVideo() start");
+    private void mixVideo() {
+        logger.info("mixVideo() start");
         MediaExtractor videoExtractor = new MediaExtractor();
         MediaExtractor audioExtractor = new MediaExtractor();
         MediaMuxer mediaMuxer = null;
@@ -297,7 +299,7 @@ public class MediaMuxerExtractActivity extends AppCompatActivity implements View
                 return;
             }
 
-            String outPath = new File(fileDir, "output.mp4").getAbsolutePath();
+            String outPath = new File(fileDir, ASSETS_DIR + "output.mp4").getAbsolutePath();
             mediaMuxer = new MediaMuxer(outPath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
             int writeVideoTrackIndex = mediaMuxer.addTrack(videoFormat);
             int writeAudioTrackIndex = mediaMuxer.addTrack(audioFormat);

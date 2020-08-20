@@ -104,7 +104,7 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
                 mCamera.setPreviewCallback(new Camera.PreviewCallback() {
                     @Override
                     public void onPreviewFrame(byte[] data, Camera camera) {
-                        logger.verbose("onPreviewFrame data length:{}", data != null ? data.length : 0);
+//                        logger.verbose("onPreviewFrame data length:{}", data != null ? data.length : 0);
                     }
                 });
                 mCamera.setPreviewDisplay(mSurfaceHolder);
@@ -121,6 +121,7 @@ public class CameraSurfacePreview extends SurfaceView implements SurfaceHolder.C
             try {
                 mCamera.stopPreview();
                 mCamera.setPreviewDisplay(null);
+                mCamera.setPreviewCallback(null);
                 mCamera.release();
             } catch (IOException e) {
                 logger.error("releaseCamera error", e);

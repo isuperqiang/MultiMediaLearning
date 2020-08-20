@@ -2,6 +2,7 @@ package com.richie.multimedialearning.muxerextract;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.ImageFormat;
 import android.hardware.Camera;
 import android.util.AttributeSet;
 import android.view.SurfaceHolder;
@@ -15,8 +16,9 @@ import com.richie.multimedialearning.utils.ThreadHelper;
 import java.io.IOException;
 
 /**
- * @author Richie on 2018.08.01
  * 使用 SurfaceView 预览
+ *
+ * @author Richie on 2018.08.01
  */
 public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Callback, Camera.PreviewCallback {
     private final ILogger logger = LoggerFactory.getLogger(CameraSurfaceView.class);
@@ -27,15 +29,14 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
     private int mPreviewHeight = 720;
     private int mFrameRate = 30;
     private H264Encoder mH264Encoder;
+    private byte[] mByteCopy;
 
     public CameraSurfaceView(Context context) {
-        super(context);
-        init();
+        this(context, null);
     }
 
     public CameraSurfaceView(Context context, AttributeSet attrs) {
-        super(context, attrs);
-        init();
+        this(context, attrs, 0);
     }
 
     public CameraSurfaceView(Context context, AttributeSet attrs, int defStyleAttr) {
@@ -81,6 +82,7 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
     }
 
     private void openCamera() {
+        logger.debug("openCamera");
         Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
         int number = Camera.getNumberOfCameras();
         for (int i = 0; i < number; i++) {
@@ -90,11 +92,12 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
                     mCamera = Camera.open(i);
                     CameraUtils.setCameraDisplayOrientation(mActivity, i, mCamera);
                     Camera.Parameters params = mCamera.getParameters();
-                    params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
-                    params.setPreviewSize(mPreviewWidth, mPreviewHeight);
+                    CameraUtils.choosePreviewSize(params, mPreviewWidth, mPreviewHeight);
+                    CameraUtils.chooseFrameRate(params, mFrameRate);
+                    CameraUtils.setFocusModes(params);
+                    mCamera.setParameters(params);
                 } catch (Exception e) {
                     logger.error("openCamera error", e);
-                    mActivity.onBackPressed();
                 }
                 break;
             }
@@ -102,10 +105,17 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
     }
 
     private void startPreviewDisplay() {
+        logger.debug("startPreviewDisplay");
         if (mCamera != null) {
             try {
                 mCamera.setPreviewDisplay(mSurfaceHolder);
-                mCamera.setPreviewCallback(this);
+                mCamera.setPreviewCallbackWithBuffer(this);
+                int length = mPreviewWidth * mPreviewHeight * ImageFormat.getBitsPerPixel(ImageFormat.NV21) / 8;
+                mByteCopy = new byte[length];
+                byte[][] buffer = new byte[3][length];
+                for (byte[] bytes : buffer) {
+                    mCamera.addCallbackBuffer(bytes);
+                }
                 mCamera.startPreview();
             } catch (IOException e) {
                 logger.error("startPreviewDisplay error", e);
@@ -114,11 +124,12 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
     }
 
     private void releaseCamera() {
+        logger.debug("releaseCamera");
         if (mCamera != null) {
             try {
                 mCamera.stopPreview();
                 mCamera.setPreviewDisplay(null);
-                mCamera.setPreviewCallback(null);
+                mCamera.setPreviewCallbackWithBuffer(null);
                 mCamera.release();
             } catch (IOException e) {
                 logger.error("releaseCamera error", e);
@@ -129,7 +140,9 @@ public class CameraSurfaceView extends SurfaceView implements SurfaceHolder.Call
 
     @Override
     public void onPreviewFrame(byte[] data, Camera camera) {
-        logger.debug("onPreviewFrame");
-        mH264Encoder.putData(data);
+        logger.debug("onPreviewFrame: {}", data);
+        System.arraycopy(data, 0, mByteCopy, 0, data.length);
+        mH264Encoder.putData(mByteCopy);
     }
+
 }

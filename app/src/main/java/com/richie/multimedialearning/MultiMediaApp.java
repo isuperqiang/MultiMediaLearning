@@ -25,7 +25,7 @@ public class MultiMediaApp extends Application {
         ThreadHelper.getInstance().execute(new Runnable() {
             @Override
             public void run() {
-                FileUtils.copyAssets2FileDir(sContext);
+                FileUtils.copyAssetsToFileDir(sContext);
             }
         });
     }
