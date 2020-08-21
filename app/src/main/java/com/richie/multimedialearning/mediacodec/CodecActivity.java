@@ -88,7 +88,6 @@ public class CodecActivity extends AppCompatActivity {
                                 aacFile.delete();
                             }
                             try {
-                                logger.info("startEncode");
                                 AacPcmCoder.encodePcmToAac(pcmFile, aacFile);
                                 runOnUiThread(new Runnable() {
                                     @Override

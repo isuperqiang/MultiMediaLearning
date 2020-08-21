@@ -10,6 +10,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
 /**
@@ -46,26 +48,25 @@ public final class AacPcmCoder {
             return;
         }
 
-        FileOutputStream fosDecoder = new FileOutputStream(pcmFile);
         String mediaMime = mediaFormat.getString(MediaFormat.KEY_MIME);
         Log.i(TAG, "decodeAacToPcm: mimeType: " + mediaMime);
         MediaCodec codec = MediaCodec.createDecoderByType(mediaMime);
         codec.configure(mediaFormat, null, null, 0);
         codec.start();
-        ByteBuffer[] codecInputBuffers = codec.getInputBuffers();
-        ByteBuffer[] codecOutputBuffers = codec.getOutputBuffers();
-        final long kTimeOutUs = 10_000;
-        MediaCodec.BufferInfo info = new MediaCodec.BufferInfo();
+        ByteBuffer[] inputBuffers = codec.getInputBuffers();
+        ByteBuffer[] outputBuffers = codec.getOutputBuffers();
+        MediaCodec.BufferInfo outBufferInfo = new MediaCodec.BufferInfo();
+        final long timeoutUs = 10_000;
         boolean sawInputEOS = false;
         boolean sawOutputEOS = false;
-
-        try {
+        byte[] outputBytes = null;
+        try (OutputStream fosAudio = new FileOutputStream(pcmFile)) {
             while (!sawOutputEOS) {
                 if (!sawInputEOS) {
-                    int inputBufIndex = codec.dequeueInputBuffer(kTimeOutUs);
+                    int inputBufIndex = codec.dequeueInputBuffer(timeoutUs);
                     if (inputBufIndex >= 0) {
-                        ByteBuffer dstBuf = codecInputBuffers[inputBufIndex];
-                        int sampleSize = extractor.readSampleData(dstBuf, 0);
+                        ByteBuffer inputBuffer = inputBuffers[inputBufIndex];
+                        int sampleSize = extractor.readSampleData(inputBuffer, 0);
                         if (sampleSize < 0) {
                             Log.i(TAG, "saw input EOS.");
                             sawInputEOS = true;
@@ -77,35 +78,34 @@ public final class AacPcmCoder {
                     }
                 }
 
-                int outputBufferIndex = codec.dequeueOutputBuffer(info, kTimeOutUs);
-                if (outputBufferIndex >= 0) {
+                int outputBufIndex = codec.dequeueOutputBuffer(outBufferInfo, timeoutUs);
+                if (outputBufIndex >= 0) {
                     // Simply ignore codec config buffers.
-                    if ((info.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
+                    if ((outBufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
                         Log.i(TAG, "audio encoder: codec config buffer");
-                        codec.releaseOutputBuffer(outputBufferIndex, false);
+                        codec.releaseOutputBuffer(outputBufIndex, false);
                         continue;
                     }
-
-                    if (info.size != 0) {
-                        ByteBuffer outBuf = codecOutputBuffers[outputBufferIndex];
-                        outBuf.position(info.offset);
-                        outBuf.limit(info.offset + info.size);
-                        byte[] data = new byte[info.size];
-                        outBuf.get(data);
-                        fosDecoder.write(data);
+                    if (outBufferInfo.size > 0) {
+                        ByteBuffer outputBuffer = outputBuffers[outputBufIndex];
+                        outputBuffer.position(outBufferInfo.offset);
+                        outputBuffer.limit(outBufferInfo.offset + outBufferInfo.size);
+                        if (outputBytes == null) {
+                            outputBytes = new byte[outBufferInfo.size];
+                        }
+                        outputBuffer.get(outputBytes);
+                        fosAudio.write(outputBytes);
                     }
-
-                    codec.releaseOutputBuffer(outputBufferIndex, false);
-                    if ((info.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                    codec.releaseOutputBuffer(outputBufIndex, false);
+                    if ((outBufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
                         Log.i(TAG, "saw output EOS.");
                         sawOutputEOS = true;
                     }
-                } else if (outputBufferIndex == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
-                    codecOutputBuffers = codec.getOutputBuffers();
+                } else if (outputBufIndex == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
+                    outputBuffers = codec.getOutputBuffers();
                     Log.i(TAG, "output buffers have changed.");
-                } else if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                    MediaFormat oformat = codec.getOutputFormat();
-                    Log.i(TAG, "output format has changed to " + oformat);
+                } else if (outputBufIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                    Log.i(TAG, "output format has changed to " + codec.getOutputFormat());
                 }
             }
         } finally {
@@ -113,7 +113,6 @@ public final class AacPcmCoder {
             codec.stop();
             codec.release();
             extractor.release();
-            fosDecoder.close();
         }
     }
 
@@ -125,53 +124,45 @@ public final class AacPcmCoder {
      * @throws IOException
      */
     public static void encodePcmToAac(File inPcmFile, File outAacFile) throws IOException {
-        FileInputStream fisRawAudio = null;
-        FileOutputStream fosAccAudio = null;
         MediaCodec audioEncoder = createAudioEncoder();
-        ;
-        try {
-            fisRawAudio = new FileInputStream(inPcmFile);
-            fosAccAudio = new FileOutputStream(outAacFile);
+        try (InputStream fisAudio = new FileInputStream(inPcmFile);
+             OutputStream fosAudio = new FileOutputStream(outAacFile)) {
             audioEncoder.start();
-            ByteBuffer[] audioInputBuffers = audioEncoder.getInputBuffers();
-            ByteBuffer[] audioOutputBuffers = audioEncoder.getOutputBuffers();
             boolean sawInputEOS = false;
             boolean sawOutputEOS = false;
-            long audioTimeUs = 0;
+            long presentationTimeUs = 0;
+            byte[] inputBytes = null;
+            int sumReadInputSize = 0;
+            long outputPresentationTimeUs = 0;
+            final int timeoutUs = 10_000;
             MediaCodec.BufferInfo outBufferInfo = new MediaCodec.BufferInfo();
-            boolean readRawAudioEOS = false;
-            byte[] rawInputBytes = new byte[8192];
-            int readRawAudioCount;
-            int rawAudioSize = 0;
-            long lastAudioPresentationTimeUs = 0;
-            int inputBufIndex, outputBufIndex;
+            ByteBuffer[] inputBuffers = audioEncoder.getInputBuffers();
+            ByteBuffer[] outputBuffers = audioEncoder.getOutputBuffers();
             while (!sawOutputEOS) {
                 if (!sawInputEOS) {
-                    inputBufIndex = audioEncoder.dequeueInputBuffer(10_000);
+                    int inputBufIndex = audioEncoder.dequeueInputBuffer(timeoutUs);
                     if (inputBufIndex >= 0) {
-                        ByteBuffer inputBuffer = audioInputBuffers[inputBufIndex];
+                        ByteBuffer inputBuffer = inputBuffers[inputBufIndex];
                         inputBuffer.clear();
                         int bufferSize = inputBuffer.remaining();
-                        if (bufferSize != rawInputBytes.length) {
-                            rawInputBytes = new byte[bufferSize];
+                        if (inputBytes == null) {
+                            inputBytes = new byte[bufferSize];
                         }
-                        readRawAudioCount = fisRawAudio.read(rawInputBytes);
-                        if (readRawAudioCount == -1) {
-                            readRawAudioEOS = true;
-                        }
-                        if (readRawAudioEOS) {
+                        int readInputSize = fisAudio.read(inputBytes);
+                        if (readInputSize < 0) {
                             audioEncoder.queueInputBuffer(inputBufIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
                             sawInputEOS = true;
+                            Log.i(TAG, "saw input EOS.");
                         } else {
-                            inputBuffer.put(rawInputBytes, 0, readRawAudioCount);
-                            rawAudioSize += readRawAudioCount;
-                            audioEncoder.queueInputBuffer(inputBufIndex, 0, readRawAudioCount, audioTimeUs, 0);
-                            audioTimeUs = (long) (1_000_000 * ((float) rawAudioSize / AUDIO_BYTES_PER_SAMPLE));
+                            inputBuffer.put(inputBytes, 0, readInputSize);
+                            sumReadInputSize += readInputSize;
+                            audioEncoder.queueInputBuffer(inputBufIndex, 0, readInputSize, presentationTimeUs, 0);
+                            presentationTimeUs = (long) (1_000_000 * ((float) sumReadInputSize / AUDIO_BYTES_PER_SAMPLE));
                         }
                     }
                 }
 
-                outputBufIndex = audioEncoder.dequeueOutputBuffer(outBufferInfo, 10_000);
+                int outputBufIndex = audioEncoder.dequeueOutputBuffer(outBufferInfo, timeoutUs);
                 if (outputBufIndex >= 0) {
                     // Simply ignore codec config buffers.
                     if ((outBufferInfo.flags & MediaCodec.BUFFER_FLAG_CODEC_CONFIG) != 0) {
@@ -179,13 +170,12 @@ public final class AacPcmCoder {
                         audioEncoder.releaseOutputBuffer(outputBufIndex, false);
                         continue;
                     }
-                    if (outBufferInfo.size != 0) {
-                        ByteBuffer outBuffer = audioOutputBuffers[outputBufIndex];
+                    if (outBufferInfo.size > 0) {
+                        ByteBuffer outBuffer = outputBuffers[outputBufIndex];
                         outBuffer.position(outBufferInfo.offset);
                         outBuffer.limit(outBufferInfo.offset + outBufferInfo.size);
-                        //Log.v(TAG, String.format(" writing audio sample : size=%s , presentationTimeUs=%s", outBufferInfo.size, outBufferInfo.presentationTimeUs));
-                        if (lastAudioPresentationTimeUs <= outBufferInfo.presentationTimeUs) {
-                            lastAudioPresentationTimeUs = outBufferInfo.presentationTimeUs;
+                        if (outputPresentationTimeUs <= outBufferInfo.presentationTimeUs) {
+                            outputPresentationTimeUs = outBufferInfo.presentationTimeUs;
                             int outBufSize = outBufferInfo.size;
                             int outPacketSize = outBufSize + 7;
                             outBuffer.position(outBufferInfo.offset);
@@ -193,8 +183,7 @@ public final class AacPcmCoder {
                             byte[] outData = new byte[outPacketSize];
                             addADTStoPacket(outData, outPacketSize);
                             outBuffer.get(outData, 7, outBufSize);
-                            fosAccAudio.write(outData, 0, outData.length);
-                            //Log.v(TAG, outData.length + " bytes written.");
+                            fosAudio.write(outData, 0, outData.length);
                         } else {
                             Log.e(TAG, "error sample! its presentationTimeUs should not lower than before.");
                         }
@@ -202,22 +191,17 @@ public final class AacPcmCoder {
                     audioEncoder.releaseOutputBuffer(outputBufIndex, false);
                     if ((outBufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
                         sawOutputEOS = true;
+                        Log.i(TAG, "saw output EOS.");
                     }
                 } else if (outputBufIndex == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
-                    audioOutputBuffers = audioEncoder.getOutputBuffers();
+                    outputBuffers = audioEncoder.getOutputBuffers();
+                    Log.i(TAG, "output buffers have changed.");
                 } else if (outputBufIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                    MediaFormat audioFormat = audioEncoder.getOutputFormat();
-                    Log.i(TAG, "format change : " + audioFormat);
+                    Log.i(TAG, "output format has changed to " + audioEncoder.getOutputFormat());
                 }
             }
         } finally {
             Log.i(TAG, "encodePcmToAac: finish");
-            if (fisRawAudio != null) {
-                fisRawAudio.close();
-            }
-            if (fosAccAudio != null) {
-                fosAccAudio.close();
-            }
             audioEncoder.release();
         }
     }
