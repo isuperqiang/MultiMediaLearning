@@ -21,8 +21,8 @@ import java.util.concurrent.Executors;
  *
  * @author Richie on 2019.04.01
  */
-public class AudioEncoder {
-    private static final String TAG = "AudioEncoder";
+public class AudioRecordEncoder {
+    private static final String TAG = "AudioRecordEncoder";
     public static final String MIMETYPE_AUDIO_AAC = "audio/mp4a-latm";
     // 输入源 麦克风
     private final static int AUDIO_SOURCE = MediaRecorder.AudioSource.MIC;
@@ -48,13 +48,13 @@ public class AudioEncoder {
      */
     public void createAudio() {
         // 获得缓冲区字节大小
-        mBufferSizeInBytes = AudioRecord.getMinBufferSize(AudioEncoder.SAMPLE_RATE, AudioEncoder.CHANNEL_CONFIG, AudioEncoder.AUDIO_FORMAT);
+        mBufferSizeInBytes = AudioRecord.getMinBufferSize(AudioRecordEncoder.SAMPLE_RATE, AudioRecordEncoder.CHANNEL_CONFIG, AudioRecordEncoder.AUDIO_FORMAT);
         if (mBufferSizeInBytes <= 0) {
             throw new RuntimeException("AudioRecord is not available, minBufferSize: " + mBufferSizeInBytes);
         }
         Log.i(TAG, "createAudioRecord minBufferSize: " + mBufferSizeInBytes);
 
-        mAudioRecord = new AudioRecord(AudioEncoder.AUDIO_SOURCE, AudioEncoder.SAMPLE_RATE, AudioEncoder.CHANNEL_CONFIG, AudioEncoder.AUDIO_FORMAT, mBufferSizeInBytes);
+        mAudioRecord = new AudioRecord(AudioRecordEncoder.AUDIO_SOURCE, AudioRecordEncoder.SAMPLE_RATE, AudioRecordEncoder.CHANNEL_CONFIG, AudioRecordEncoder.AUDIO_FORMAT, mBufferSizeInBytes);
         int state = mAudioRecord.getState();
         Log.i(TAG, "createAudio state: " + state + ", initialized: " + (state == AudioRecord.STATE_INITIALIZED));
     }

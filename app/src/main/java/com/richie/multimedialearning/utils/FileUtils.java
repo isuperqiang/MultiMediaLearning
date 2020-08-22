@@ -144,6 +144,33 @@ public final class FileUtils {
         return pcmFileDir;
     }
 
+    public static File getAvcFileDir(Context context) {
+        File fileDir = getFileDir(context);
+        File avcFileDir = new File(fileDir, "avc");
+        if (!avcFileDir.exists()) {
+            avcFileDir.mkdirs();
+        }
+        return avcFileDir;
+    }
+
+    public static File getYuvFileDir(Context context) {
+        File fileDir = getFileDir(context);
+        File yuvFileDir = new File(fileDir, "yuv");
+        if (!yuvFileDir.exists()) {
+            yuvFileDir.mkdirs();
+        }
+        return yuvFileDir;
+    }
+
+    public static File getRgbaFileDir(Context context) {
+        File fileDir = getFileDir(context);
+        File rgbaFileDir = new File(fileDir, "rgba");
+        if (!rgbaFileDir.exists()) {
+            rgbaFileDir.mkdirs();
+        }
+        return rgbaFileDir;
+    }
+
     public static File getPhotoFileDir(Context context) {
         File fileDir = getFileDir(context);
         File photoFileDir = new File(fileDir, "photo");

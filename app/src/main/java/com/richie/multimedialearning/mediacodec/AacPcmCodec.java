@@ -17,8 +17,8 @@ import java.nio.ByteBuffer;
 /**
  * @author Richie on 2019.04.03
  */
-public final class AacPcmCoder {
-    private static final String TAG = "AacPcmCoder";
+public final class AacPcmCodec {
+    private static final String TAG = "AacPcmCodec";
     private final static String AUDIO_MIME = "audio/mp4a-latm";
     private final static long AUDIO_BYTES_PER_SAMPLE = 44100 * 1 * 16 / 8;
 
@@ -33,7 +33,7 @@ public final class AacPcmCoder {
         MediaExtractor extractor = new MediaExtractor();
         extractor.setDataSource(aacFile.getAbsolutePath());
         MediaFormat mediaFormat = null;
-        for (int i = 0; i < extractor.getTrackCount(); i++) {
+        for (int i = 0, count = extractor.getTrackCount(); i < count; i++) {
             MediaFormat format = extractor.getTrackFormat(i);
             String mime = format.getString(MediaFormat.KEY_MIME);
             if (mime.startsWith("audio/")) {
@@ -48,9 +48,9 @@ public final class AacPcmCoder {
             return;
         }
 
-        String mediaMime = mediaFormat.getString(MediaFormat.KEY_MIME);
-        Log.i(TAG, "decodeAacToPcm: mimeType: " + mediaMime);
-        MediaCodec codec = MediaCodec.createDecoderByType(mediaMime);
+        String mime = mediaFormat.getString(MediaFormat.KEY_MIME);
+        Log.i(TAG, "decodeAacToPcm: mimeType: " + mime);
+        MediaCodec codec = MediaCodec.createDecoderByType(mime);
         codec.configure(mediaFormat, null, null, 0);
         codec.start();
         ByteBuffer[] inputBuffers = codec.getInputBuffers();
@@ -109,7 +109,7 @@ public final class AacPcmCoder {
                 }
             }
         } finally {
-            Log.i(TAG, "decodeAacToPcm finish");
+            Log.i(TAG, "decodeAacToPcm finish " + pcmFile.getAbsolutePath());
             codec.stop();
             codec.release();
             extractor.release();
@@ -201,7 +201,7 @@ public final class AacPcmCoder {
                 }
             }
         } finally {
-            Log.i(TAG, "encodePcmToAac: finish");
+            Log.i(TAG, "encodePcmToAac: finish " + outAacFile.getAbsolutePath());
             audioEncoder.release();
         }
     }

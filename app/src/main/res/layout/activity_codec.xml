@@ -1,14 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context="com.richie.multimedialearning.mediacodec.CodecActivity">
+    android:layout_height="match_parent">
 
     <Button
         android:id="@+id/btn_start_record_encode_audio"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
@@ -20,7 +18,7 @@
 
     <Button
         android:id="@+id/btn_start_encode_audio"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
@@ -32,7 +30,7 @@
 
     <Button
         android:id="@+id/btn_start_decode_audio"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
@@ -43,8 +41,32 @@
         app:layout_constraintTop_toBottomOf="@id/btn_start_encode_audio" />
 
     <Button
+        android:id="@+id/btn_start_encode_video"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:text="编码视频 yuv2H264"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_start_decode_audio" />
+
+    <Button
+        android:id="@+id/btn_start_decode_video"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:text="解码视频 H2642RGBA"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_start_encode_video" />
+
+    <Button
         android:id="@+id/btn_start_camera"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
@@ -52,7 +74,6 @@
         android:text="打开相机，录制视频"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btn_start_decode_audio" />
-
+        app:layout_constraintTop_toBottomOf="@id/btn_start_decode_video" />
 
 </android.support.constraint.ConstraintLayout>

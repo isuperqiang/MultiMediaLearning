@@ -177,6 +177,63 @@ public final class GlUtil {
     }
 
     /**
+     * Creates a texture object suitable for use with this program.
+     * <p>
+     * On exit, the texture will be bound.
+     */
+    public static int createTextureObject(int textureTarget) {
+        int[] textures = new int[1];
+        GLES20.glGenTextures(1, textures, 0);
+        GlUtil.checkGlError("glGenTextures");
+
+        int texId = textures[0];
+        GLES20.glBindTexture(textureTarget, texId);
+        GlUtil.checkGlError("glBindTexture " + texId);
+
+        GLES20.glTexParameterf(textureTarget, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameterf(textureTarget, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(textureTarget, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(textureTarget, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+        GlUtil.checkGlError("glTexParameter");
+
+        return texId;
+    }
+
+    public static void deleteTextures(int[] textureId) {
+        if (textureId != null && textureId.length > 0) {
+            GLES20.glDeleteTextures(textureId.length, textureId, 0);
+        }
+    }
+
+    public static void createFrameBuffers(int[] fboTex, int[] fboId, int width, int height) {
+        //generate fbo id
+        GLES20.glGenFramebuffers(fboId.length, fboId, 0);
+        //generate texture
+        GLES20.glGenTextures(fboTex.length, fboTex, 0);
+        //Bind Frame buffer
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, fboId[0]);
+        //Bind texture
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, fboTex[0]);
+        //Define texture parameters
+        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, width, height, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+        //Attach texture FBO color attachment
+        GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, fboTex[0], 0);
+        //we are done, reset
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+    }
+
+    public static void deleteFrameBuffers(int[] fboId) {
+        if (fboId != null && fboId.length > 0) {
+            GLES20.glDeleteFramebuffers(fboId.length, fboId, 0);
+        }
+    }
+
+    /**
      * Writes GL version info to the log. call on GlThread
      */
     public static void logVersionInfo() {
