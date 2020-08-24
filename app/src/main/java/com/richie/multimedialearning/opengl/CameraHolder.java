@@ -3,16 +3,13 @@ package com.richie.multimedialearning.opengl;
 
 import android.app.Activity;
 import android.graphics.ImageFormat;
-import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
+import android.util.Log;
 
-import com.richie.easylog.ILogger;
-import com.richie.easylog.LoggerFactory;
 import com.richie.multimedialearning.utils.CameraUtils;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 /**
  * 相机管理类
@@ -20,20 +17,20 @@ import java.util.Arrays;
  * @author Richie on 2018.08.01
  */
 public class CameraHolder {
-    private static final int BUFFER_COUNT = 4;
-    private static final int PREVIEW_WIDTH = 1920;
-    private static final int PREVIEW_HEIGHT = 1080;
-    private final ILogger logger = LoggerFactory.getLogger(CameraHolder.class);
+    private static final String TAG = "CameraHolder";
+    private static final int BUFFER_COUNT = 3;
+    private static final int PREVIEW_WIDTH = 1280;
+    private static final int PREVIEW_HEIGHT = 720;
     private Camera mCamera;
-    // preview size: width and height
-    private Point mPreviewSize;
+    private int mPreviewWidth;
+    private int mPreviewHeight;
 
     public void setPreviewTexture(SurfaceTexture texture) {
         if (mCamera != null) {
             try {
                 mCamera.setPreviewTexture(texture);
             } catch (IOException e) {
-                logger.error(e);
+                Log.e(TAG, "setPreviewTexture: ", e);
             }
         }
     }
@@ -41,7 +38,7 @@ public class CameraHolder {
     public void setOnPreviewFrameCallback(final PreviewFrameCallback callback) {
         if (mCamera != null) {
             for (int i = 0; i < BUFFER_COUNT; i++) {
-                byte[] buffer = new byte[mPreviewSize.x * mPreviewSize.y * ImageFormat.getBitsPerPixel(ImageFormat.NV21) / 8];
+                byte[] buffer = new byte[mPreviewWidth * mPreviewHeight * ImageFormat.getBitsPerPixel(ImageFormat.NV21) / 8];
                 mCamera.addCallbackBuffer(buffer);
             }
             mCamera.setPreviewCallbackWithBuffer(new Camera.PreviewCallback() {
@@ -55,30 +52,29 @@ public class CameraHolder {
     }
 
     public void startPreview() {
-        logger.debug("startPreview() called");
+        Log.d(TAG, "startPreview: ");
         if (mCamera != null) {
             mCamera.startPreview();
         }
     }
 
     public void release() {
-        logger.debug("release() called");
+        Log.d(TAG, "release: ");
         if (mCamera != null) {
-            mCamera.stopPreview();
-            mCamera.release();
+            try {
+                mCamera.setPreviewTexture(null);
+                mCamera.setPreviewCallbackWithBuffer(null);
+                mCamera.release();
+            } catch (IOException e) {
+                Log.e(TAG, "release: ", e);
+            }
             mCamera = null;
         }
     }
 
-    public Point getPreviewSize() {
-        return mPreviewSize;
-    }
-
     public void openCamera(Activity activity) {
         Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
-        int number = Camera.getNumberOfCameras();
-        logger.info("openCamera camera numbers:{}", number);
-        for (int i = 0; i < number; i++) {
+        for (int i = 0, number = Camera.getNumberOfCameras(); i < number; i++) {
             Camera.getCameraInfo(i, cameraInfo);
             if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
                 try {
@@ -86,12 +82,13 @@ public class CameraHolder {
                     CameraUtils.setCameraDisplayOrientation(activity, i, mCamera);
                     Camera.Parameters params = mCamera.getParameters();
                     int[] previewSize = CameraUtils.choosePreviewSize(params, PREVIEW_WIDTH, PREVIEW_HEIGHT);
-                    logger.info("previewSize:{}", Arrays.toString(previewSize));
-                    params.setPreviewSize(previewSize[0], previewSize[1]);
-                    mPreviewSize = new Point(previewSize[0], previewSize[1]);
+                    mPreviewWidth = previewSize[0];
+                    mPreviewHeight = previewSize[1];
+                    CameraUtils.setFocusModes(params);
+                    CameraUtils.chooseFrameRate(params, 30);
                     mCamera.setParameters(params);
                 } catch (Exception e) {
-                    logger.error("openCamera error", e);
+                    Log.e(TAG, "openCamera: ", e);
                 }
                 break;
             }
@@ -99,10 +96,18 @@ public class CameraHolder {
     }
 
     public void stopPreview() {
-        logger.debug("stopPreview() called");
+        Log.d(TAG, "stopPreview: ");
         if (mCamera != null) {
             mCamera.stopPreview();
         }
+    }
+
+    public int getPreviewWidth() {
+        return mPreviewWidth;
+    }
+
+    public int getPreviewHeight() {
+        return mPreviewHeight;
     }
 
     public interface PreviewFrameCallback {

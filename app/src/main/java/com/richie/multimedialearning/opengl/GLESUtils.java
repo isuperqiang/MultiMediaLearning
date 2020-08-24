@@ -384,7 +384,6 @@ public final class GLESUtils {
         });
 
         GLES20.glViewport(originalViewport[0], originalViewport[1], originalViewport[2], originalViewport[3]);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
         deleteTextureId(fboTex);
         deleteFBO(fboId);
@@ -440,7 +439,7 @@ public final class GLESUtils {
         final ConfigurationInfo configurationInfo = activityManager.getDeviceConfigurationInfo();
         int version = configurationInfo.reqGlEsVersion >= 0x30000 ? 3 : 2;
         String glEsVersion = configurationInfo.getGlEsVersion();
-        Log.e(TAG, "reqGlEsVersion: " + Integer.toHexString(configurationInfo.reqGlEsVersion)
+        Log.d(TAG, "reqGlEsVersion: " + Integer.toHexString(configurationInfo.reqGlEsVersion)
                 + ", glEsVersion: " + glEsVersion + ", return: " + version);
         return version;
     }

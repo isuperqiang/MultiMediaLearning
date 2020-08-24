@@ -39,7 +39,6 @@ public class CodecActivity extends AppCompatActivity {
         findViewById(R.id.btn_start_encode_audio).setOnClickListener(viewClickListener);
         findViewById(R.id.btn_start_decode_video).setOnClickListener(viewClickListener);
         findViewById(R.id.btn_start_encode_video).setOnClickListener(viewClickListener);
-        findViewById(R.id.btn_start_camera).setOnClickListener(viewClickListener);
     }
 
     @Override
@@ -151,10 +150,6 @@ public class CodecActivity extends AppCompatActivity {
                 }
                 break;
                 case R.id.btn_start_encode_video: {
-
-                }
-                break;
-                case R.id.btn_start_camera: {
                     Intent intent = new Intent(CodecActivity.this, CameraOpenGlActivity.class);
                     startActivity(intent);
                 }

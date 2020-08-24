@@ -4,6 +4,8 @@ import android.os.SystemClock;
 import android.util.Log;
 
 /**
+ * 帧率限制
+ *
  * @author Richie on 2019.04.13
  */
 public final class LimitFpsUtil {

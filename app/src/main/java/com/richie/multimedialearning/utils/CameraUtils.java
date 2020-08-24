@@ -114,12 +114,14 @@ public final class CameraUtils {
     }
 
     /**
-     * 设置对焦，会影响camera吞吐速率
+     * 设置对焦
      */
     public static void setFocusModes(Camera.Parameters parameters) {
         List<String> focusModes = parameters.getSupportedFocusModes();
         if (focusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
             parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+        } else if (focusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
+            parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
         }
     }
 

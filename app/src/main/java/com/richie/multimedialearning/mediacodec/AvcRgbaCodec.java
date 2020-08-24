@@ -17,7 +17,7 @@ import android.view.Surface;
 import com.richie.multimedialearning.utils.gles.EglCore;
 import com.richie.multimedialearning.utils.gles.GlUtil;
 import com.richie.multimedialearning.utils.gles.OffscreenSurface;
-import com.richie.multimedialearning.utils.gles.program.ProgramTextureOES;
+import com.richie.multimedialearning.utils.gles.program.TextureProgram;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class AvcRgbaCodec implements SurfaceTexture.OnFrameAvailableListener {
     private static final String TAG = "AvcRgbaCodec";
-    private static final boolean VERBOSE = false;
+    private static final boolean VERBOSE = true;
     private EglCore mEglCore;
     private OffscreenSurface mOffscreenSurface;
     private ByteBuffer mByteBuffer;
@@ -44,12 +44,11 @@ public class AvcRgbaCodec implements SurfaceTexture.OnFrameAvailableListener {
     private SurfaceTexture mSurfaceTexture;
     private Surface mSurface;
     private int mTexId;
-    private ProgramTextureOES mProgramTextureOES;
+    private TextureProgram mTextureProgram;
     private float[] mTransformMatrix = new float[16];
     private int mFrames;
     private File mDestDir;
-    private final Object mLock1 = new Object();
-    private final Object mLock2 = new Object();
+    private final Object mLock = new Object();
     private Handler mSurfaceHandler;
 
     public void decode(final File src, final File destDir) throws IOException {
@@ -147,12 +146,10 @@ public class AvcRgbaCodec implements SurfaceTexture.OnFrameAvailableListener {
                     boolean doRender = outBufferInfo.size != 0;
                     codec.releaseOutputBuffer(outBufIndex, doRender);
 
-                    synchronized (mLock2) {
-                        mLock2.notify();
-                    }
-                    if (!sawOutputEOS) {
-                        synchronized (mLock1) {
-                            lockWait(mLock1);
+                    synchronized (mLock) {
+                        mLock.notify();
+                        if (!sawOutputEOS) {
+                            lockWait(mLock);
                         }
                     }
                 }
@@ -182,7 +179,7 @@ public class AvcRgbaCodec implements SurfaceTexture.OnFrameAvailableListener {
         mOffscreenSurface = new OffscreenSurface(mEglCore, width, height);
         mOffscreenSurface.makeCurrent();
         mTexId = GlUtil.createTextureObject(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
-        mProgramTextureOES = new ProgramTextureOES();
+        mTextureProgram = TextureProgram.createTextureOES();
         mSurfaceTexture = new SurfaceTexture(mTexId);
         mSurface = new Surface(mSurfaceTexture);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -198,8 +195,8 @@ public class AvcRgbaCodec implements SurfaceTexture.OnFrameAvailableListener {
             GlUtil.deleteTextures(new int[]{mTexId});
             mTexId = -1;
         }
-        mProgramTextureOES.release();
-        mProgramTextureOES = null;
+        mTextureProgram.release();
+        mTextureProgram = null;
         mSurface.release();
         mSurface = null;
         mSurfaceTexture.setOnFrameAvailableListener(null);
@@ -217,23 +214,21 @@ public class AvcRgbaCodec implements SurfaceTexture.OnFrameAvailableListener {
         if (VERBOSE) {
             Log.v(TAG, "onFrameAvailable: " + mFrames + ", st " + mSurfaceTexture);
         }
-        synchronized (mLock1) {
-            mLock1.notifyAll();
-        }
-        synchronized (mLock2) {
+        synchronized (mLock) {
+            mLock.notify();
             if (mSurfaceTexture == null) {
-                lockWait(mLock2);
+                lockWait(mLock);
                 return;
             }
             try {
                 mSurfaceTexture.updateTexImage();
             } catch (Exception e) {
-                lockWait(mLock2);
+                lockWait(mLock);
                 return;
             }
             mSurfaceTexture.getTransformMatrix(mTransformMatrix);
             GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
-            mProgramTextureOES.drawFrame(mTexId, mTransformMatrix, GlUtil.IDENTITY_MATRIX);
+            mTextureProgram.drawFrame(mTexId, mTransformMatrix, GlUtil.IDENTITY_MATRIX);
             // 保存第 ? 帧图像
             if (mFrames % 100 == 0) {
                 mByteBuffer.rewind();
@@ -241,7 +236,7 @@ public class AvcRgbaCodec implements SurfaceTexture.OnFrameAvailableListener {
                 String filePath = new File(mDestDir, mFrames + ".png").getAbsolutePath();
                 saveFrame(filePath);
             }
-            lockWait(mLock2);
+            lockWait(mLock);
         }
     }
 

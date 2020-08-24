@@ -8,29 +8,26 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * @author Richie on 2018.09.16
  */
 public final class BitmapUtils {
 
+    private BitmapUtils() {
+    }
+
     public static void writeBitmapLocal(Bitmap bitmap, File dest) throws IOException {
         if (bitmap == null || dest == null) {
             return;
         }
-
         if (dest.exists()) {
             dest.delete();
         }
-        FileOutputStream fos = null;
-        try {
-            fos = new FileOutputStream(dest);
+        try (OutputStream fos = new FileOutputStream(dest)) {
             bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos);
             fos.flush();
-        } finally {
-            if (fos != null) {
-                fos.close();
-            }
         }
     }
 
