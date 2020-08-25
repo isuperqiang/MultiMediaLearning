@@ -45,7 +45,7 @@ public class CameraSurfaceCodec {
     private int mTexId;
     private float[] mMvpMatrix;
     private float[] mTexMatrix;
-    private int mRequestDraw;
+    private int mRequestDrawFrame;
     private boolean mRequestRelease = true;
     private OnEncodeListener mOnEncodeListener;
     private boolean mEndOfStream;
@@ -107,6 +107,7 @@ public class CameraSurfaceCodec {
                                 Log.d(TAG, "sending EOS to encoder");
                             }
                             mEncoder.signalEndOfInputStream();
+                            mEndOfStream = false;
                         }
                     }
                     int outBufIndex = mEncoder.dequeueOutputBuffer(bufferInfo, 10_000);
@@ -173,7 +174,7 @@ public class CameraSurfaceCodec {
                     mMuxer = null;
                 }
                 if (mOnEncodeListener != null) {
-                    mOnEncodeListener.onStop();
+                    mOnEncodeListener.onStop(outputPath);
                 }
             }
         });
@@ -192,10 +193,8 @@ public class CameraSurfaceCodec {
                 mInputSurface = null;
 
                 synchronized (mLockDraw) {
-                    if (mRequestRelease) {
-                        mRequestRelease = false;
-                        mRequestDraw = 0;
-                    }
+                    mRequestRelease = false;
+                    mRequestDrawFrame = 0;
                     try {
                         mLockDraw.wait();
                     } catch (InterruptedException e) {
@@ -207,15 +206,16 @@ public class CameraSurfaceCodec {
                     mLockCodec.notifyAll();
                 }
                 Log.i(TAG, "draw start");
+
                 while (true) {
-                    boolean localRequestDraw = false;
+                    boolean localRequestDraw;
                     synchronized (mLockDraw) {
                         if (mRequestRelease) {
                             break;
                         }
-                        localRequestDraw = mRequestDraw > 0;
+                        localRequestDraw = mRequestDrawFrame > 0;
                         if (localRequestDraw) {
-                            mRequestDraw--;
+                            mRequestDrawFrame--;
                             if (VERBOSE) {
                                 Log.d(TAG, "draw frame");
                             }
@@ -257,12 +257,13 @@ public class CameraSurfaceCodec {
     public void draw(int texId, float[] texMatrix, float[] mvpMatrix) {
         synchronized (mLockDraw) {
             if (mRequestRelease) {
+                mLockDraw.notifyAll();
                 return;
             }
             mTexId = texId;
             mTexMatrix = texMatrix;
             mMvpMatrix = mvpMatrix;
-            mRequestDraw++;
+            mRequestDrawFrame++;
             mLockDraw.notifyAll();
         }
     }
@@ -271,6 +272,7 @@ public class CameraSurfaceCodec {
         Log.d(TAG, "release: ");
         synchronized (mLockDraw) {
             mRequestRelease = true;
+            mLockDraw.notifyAll();
         }
         synchronized (mLockCodec) {
             mEndOfStream = true;
@@ -278,9 +280,17 @@ public class CameraSurfaceCodec {
     }
 
     public interface OnEncodeListener {
+        /**
+         * codec 准备完成
+         */
         void onPrepare();
 
-        void onStop();
+        /**
+         * 录制结束
+         *
+         * @param path
+         */
+        void onStop(String path);
     }
 
 }

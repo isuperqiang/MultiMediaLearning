@@ -22,7 +22,9 @@ import com.richie.multimedialearning.utils.gles.GlUtil;
 import com.richie.multimedialearning.utils.gles.program.TextureProgram;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -129,8 +131,21 @@ public class CameraRenderer implements GLSurfaceView.Renderer {
                 }
 
                 @Override
-                public void onStop() {
-
+                public void onStop(final String path) {
+                    File dcimDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
+                    final File dest = new File(new File(dcimDir, "Camera"), FileUtils.getUUID32() + ".mp4");
+                    try (InputStream is = new FileInputStream(path)) {
+                        FileUtils.copyFile(is, dest);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    mActivity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(mActivity, "保存成功", Toast.LENGTH_SHORT).show();
+                            mActivity.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(dest)));
+                        }
+                    });
                 }
             });
             File outFile = new File(FileUtils.getAvcFileDir(mActivity), FileUtils.getUUID32() + ".mp4");

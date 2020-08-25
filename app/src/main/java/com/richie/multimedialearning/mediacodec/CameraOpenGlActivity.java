@@ -58,7 +58,7 @@ public class CameraOpenGlActivity extends AppCompatActivity implements View.OnCl
                     // stop
                     mCameraRenderer.setRecordVideo(false);
                 } else {
-                    // go
+                    // start
                     mCameraRenderer.setRecordVideo(true);
                 }
             }

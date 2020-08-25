@@ -155,7 +155,7 @@ public class AvcRgbaCodec implements SurfaceTexture.OnFrameAvailableListener {
                 }
             }
         } finally {
-            Log.i(TAG, "decodeAacToPcm finish " + destDir.getAbsolutePath());
+            Log.i(TAG, "decode finish " + destDir.getAbsolutePath());
             mSurfaceHandler.post(new Runnable() {
                 @Override
                 public void run() {
