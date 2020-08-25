@@ -44,7 +44,7 @@ public class CameraSurfaceCodec {
     // 通道数 单声道
     private static final int CHANNEL_COUNT = 1;
     // 比特率
-    private static final int AUDIO_BIT_RATE = 96_000;
+    private static final int AUDIO_BIT_RATE = 64_000;
     private static final boolean VERBOSE = true;
 
     private MediaMuxer mMuxer;
@@ -129,12 +129,12 @@ public class CameraSurfaceCodec {
                 while (true) {
                     synchronized (mLockCodec) {
                         if (mEndOfStream) {
-                            Log.d(TAG, "sending EOS to encoder");
+                            Log.d(TAG, "sending EOS to video encoder");
                             mediaCodec.signalEndOfInputStream();
                             mEndOfStream = false;
                         }
                     }
-                    int outBufIndex = mediaCodec.dequeueOutputBuffer(bufferInfo, 10_000);
+                    int outBufIndex = mediaCodec.dequeueOutputBuffer(bufferInfo, 30_000);
                     if (outBufIndex == MediaCodec.INFO_TRY_AGAIN_LATER) {
                         // no output available yet
                         if (VERBOSE) {
@@ -180,7 +180,9 @@ public class CameraSurfaceCodec {
 
                             encodedData.position(bufferInfo.offset);
                             encodedData.limit(bufferInfo.offset + bufferInfo.size);
+                            bufferInfo.presentationTimeUs = getPresentationTimeUs(mVideoPrevOutputPTSUs);
                             mMuxer.writeSampleData(trackIndex, encodedData, bufferInfo);
+                            mVideoPrevOutputPTSUs = bufferInfo.presentationTimeUs;
                             if (VERBOSE) {
                                 Log.d(TAG, "sent video " + bufferInfo.size + " bytes to muxer");
                             }
@@ -206,11 +208,12 @@ public class CameraSurfaceCodec {
                             mMuxer.stop();
                             mMuxer.release();
                             mMuxer = null;
+                            if (mOnEncodeListener != null) {
+                                mOnEncodeListener.onStop(outputPath);
+                            }
                         }
+                        mMuxerStoppedCount = 0;
                     }
-                }
-                if (mOnEncodeListener != null) {
-                    mOnEncodeListener.onStop(outputPath);
                 }
             }
         });
@@ -231,10 +234,12 @@ public class CameraSurfaceCodec {
                 if (mediaCodecInfo == null) {
                     throw new RuntimeException(MIMETYPE_AUDIO_AAC + " encoder is not available");
                 }
-                Log.i(TAG, "createMediaCodec: mediaCodecInfo " + mediaCodecInfo.getName());
+                Log.i(TAG, "createMediaCodec: audio mediaCodecInfo " + mediaCodecInfo.getName());
 
                 MediaFormat format = MediaFormat.createAudioFormat(MIMETYPE_AUDIO_AAC, SAMPLE_RATE, CHANNEL_COUNT);
                 format.setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC);
+                format.setInteger(MediaFormat.KEY_CHANNEL_MASK, AudioFormat.CHANNEL_IN_MONO);
+                format.setInteger(MediaFormat.KEY_CHANNEL_COUNT, 1);
                 format.setInteger(MediaFormat.KEY_BIT_RATE, AUDIO_BIT_RATE);
                 MediaCodec mediaCodec = null;
                 try {
@@ -248,33 +253,27 @@ public class CameraSurfaceCodec {
                     Log.e(TAG, "create audio media codec error");
                     return;
                 }
-                synchronized (mLockCodec) {
-                    try {
-                        mLockCodec.wait();
-                    } catch (InterruptedException e) {
-                        //ignored
-                    }
-                }
 
                 Log.i(TAG, "start audio codec");
                 ByteBuffer[] inputBuffers = mediaCodec.getInputBuffers();
                 ByteBuffer[] outputBuffers = mediaCodec.getOutputBuffers();
                 MediaCodec.BufferInfo outBufferInfo = new MediaCodec.BufferInfo();
-                final long timeoutUs = 10_000;
+                final long timeoutUs = 30_000;
                 int trackIndex = -1;
                 audioRecord.startRecording();
                 while (true) {
                     int inputBufIndex = mediaCodec.dequeueInputBuffer(timeoutUs);
+                    boolean markEos = false;
                     synchronized (mLockCodec) {
                         if (mEndOfAudio) {
                             Log.d(TAG, "sending EOS to audio encoder");
                             mediaCodec.queueInputBuffer(inputBufIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM);
                             mEndOfAudio = false;
-                            break;
+                            markEos = true;
                         }
                     }
 
-                    if (inputBufIndex >= 0) {
+                    if (!markEos && inputBufIndex >= 0) {
                         ByteBuffer inputBuffer = inputBuffers[inputBufIndex];
                         inputBuffer.clear();
                         int remaining = inputBuffer.remaining();
@@ -285,8 +284,12 @@ public class CameraSurfaceCodec {
                             inputBuffer.put(buffer);
                             inputBuffer.limit(buffer.length);
                             mediaCodec.queueInputBuffer(inputBufIndex, 0, readSize, 0, 0);
+                            if (VERBOSE) {
+                                Log.d(TAG, "send " + readSize + ", bytes to audio codec");
+                            }
                         }
                     }
+
                     int outBufIndex = mediaCodec.dequeueOutputBuffer(outBufferInfo, timeoutUs);
                     if (outBufIndex == MediaCodec.INFO_TRY_AGAIN_LATER) {
                         // no output available yet
@@ -325,8 +328,6 @@ public class CameraSurfaceCodec {
                             outBufferInfo.size = 0;
                         }
 
-                        Log.d(TAG, "run: audio  muxer started " + mMuxerStarted);
-
                         if (outBufferInfo.size != 0) {
                             if (!mMuxerStarted) {
                                 mediaCodec.releaseOutputBuffer(outBufIndex, false);
@@ -335,7 +336,9 @@ public class CameraSurfaceCodec {
 
                             encodedData.position(outBufferInfo.offset);
                             encodedData.limit(outBufferInfo.offset + outBufferInfo.size);
+                            //outBufferInfo.presentationTimeUs = getPresentationTimeUs(mAudioPrevOutputPTSUs);
                             mMuxer.writeSampleData(trackIndex, encodedData, outBufferInfo);
+                            //mAudioPrevOutputPTSUs = outBufferInfo.presentationTimeUs;
                             if (VERBOSE) {
                                 Log.d(TAG, "sent audio " + outBufferInfo.size + " bytes to muxer");
                             }
@@ -363,7 +366,11 @@ public class CameraSurfaceCodec {
                             mMuxer.stop();
                             mMuxer.release();
                             mMuxer = null;
+                            if (mOnEncodeListener != null) {
+                                mOnEncodeListener.onStop(outputPath);
+                            }
                         }
+                        mMuxerStoppedCount = 0;
                     }
                 }
             }
@@ -460,6 +467,19 @@ public class CameraSurfaceCodec {
             mEndOfAudio = true;
             mLockCodec.notifyAll();
         }
+    }
+
+    private long mAudioPrevOutputPTSUs = 0;
+    private long mVideoPrevOutputPTSUs = 0;
+
+    private long getPresentationTimeUs(long prev) {
+        long result = System.nanoTime() / 1000L;
+        // presentationTimeUs should be monotonic
+        // otherwise muxer fail to write
+        if (result < prev) {
+            result = (prev - result) + result;
+        }
+        return result;
     }
 
     public interface OnEncodeListener {
