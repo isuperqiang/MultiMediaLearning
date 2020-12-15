@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -20,12 +21,15 @@ import com.richie.multimedialearning.muxerextract.MediaMuxerExtractActivity;
 import com.richie.multimedialearning.opengl.OpenGLActivity;
 import com.richie.multimedialearning.surface.SurfaceActivity;
 
+import cn.richie.ffmpeg.FFmpegNative;
+
 /**
  * 功能选择界面
  *
  * @author Richie on 2018.10.17
  */
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+    private static final String TAG = "MainActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +49,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
                     Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA}, 0);
         }
+
+        String version = FFmpegNative.getVersion();
+        Log.d(TAG, "onCreate: " + version);
     }
 
     @Override

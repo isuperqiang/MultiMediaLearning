@@ -6,10 +6,15 @@ android {
 
     defaultConfig {
         applicationId "cn.richie.multimedialearning"
-        minSdkVersion 18
+        minSdkVersion 21
         targetSdkVersion 28
         versionCode 100
         versionName "1.0.0"
+        externalNativeBuild {
+            ndk {
+                abiFilters "armeabi-v7a"
+            }
+        }
     }
 
     buildTypes {
@@ -18,9 +23,10 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
     compileOptions {
-        sourceCompatibility = '1.8'
-        targetCompatibility = '1.8'
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 }
 
@@ -29,6 +35,7 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
     implementation 'com.google.android.exoplayer:exoplayer-core:2.9.6'
+    implementation project(path: ':ffmpeg')
     testImplementation 'junit:junit:4.13'
     implementation 'com.github.isuperqiang:AndEasyLog:1.6.0'
 }
