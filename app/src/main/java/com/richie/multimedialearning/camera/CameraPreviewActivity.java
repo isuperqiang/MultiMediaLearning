@@ -1,8 +1,9 @@
 package com.richie.multimedialearning.camera;
 
 import android.os.Bundle;
-import android.support.constraint.ConstraintLayout;
-import android.support.v7.app.AppCompatActivity;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.richie.multimedialearning.R;
 import com.richie.multimedialearning.utils.BarUtils;

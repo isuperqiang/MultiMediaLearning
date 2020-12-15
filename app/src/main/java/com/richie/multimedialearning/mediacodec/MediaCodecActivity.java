@@ -6,11 +6,12 @@ import android.media.MediaCodecList;
 import android.media.MediaExtractor;
 import android.media.MediaFormat;
 import android.os.Bundle;
-import android.support.constraint.ConstraintLayout;
-import android.support.v7.app.AppCompatActivity;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.richie.easylog.ILogger;
 import com.richie.easylog.LoggerFactory;
