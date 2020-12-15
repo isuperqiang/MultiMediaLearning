@@ -62,11 +62,11 @@ public class CodecActivity extends AppCompatActivity {
             switch (v.getId()) {
                 case R.id.btn_start_record_encode_audio: {
                     if (mIsRecording) {
-                        mBtnStartRecord.setText("开始录音并编码音频");
+                        mBtnStartRecord.setText("开始[录音并编码音频]");
                         mIsRecording = false;
                         stopRecord();
                     } else {
-                        mBtnStartRecord.setText("停止录音和编码音频");
+                        mBtnStartRecord.setText("停止[录音和编码音频]");
                         mIsRecording = true;
                         File file = new File(FileUtils.getAacFileDir(CodecActivity.this), FileUtils.getUUID32() + ".aac");
                         logger.info("out file:{}", file.getAbsolutePath());
@@ -130,6 +130,7 @@ public class CodecActivity extends AppCompatActivity {
                 break;
                 case R.id.btn_start_decode_video: {
                     // 解码 mp4 视频，并渲染到 Surface 上，读取 RGBA 数据
+                    v.setEnabled(false);
                     ThreadHelper.getInstance().execute(new Runnable() {
                         @Override
                         public void run() {
@@ -141,10 +142,17 @@ public class CodecActivity extends AppCompatActivity {
                                     @Override
                                     public void run() {
                                         Toast.makeText(CodecActivity.this, "视频解码完成", Toast.LENGTH_SHORT).show();
+                                        v.setEnabled(true);
                                     }
                                 });
                             } catch (IOException e) {
                                 logger.error(e);
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        v.setEnabled(true);
+                                    }
+                                });
                             }
                         }
                     });

@@ -3,6 +3,7 @@ package com.richie.multimedialearning.utils;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
+import android.os.Process;
 
 import com.richie.easylog.ILogger;
 import com.richie.easylog.LoggerFactory;
@@ -23,8 +24,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class ThreadHelper {
     private final ILogger log = LoggerFactory.getLogger(ThreadHelper.class);
-    private Handler mMainHandler;
-    private ExecutorService mExecutorService;
+    private final Handler mMainHandler;
+    private final ExecutorService mExecutorService;
     private Handler mWorkHandler;
 
     private ThreadHelper() {
@@ -50,7 +51,7 @@ public final class ThreadHelper {
 
     private synchronized void ensureSubHandler() {
         if (mWorkHandler == null) {
-            HandlerThread handlerThread = new HandlerThread("WorkHandler");
+            HandlerThread handlerThread = new HandlerThread("WorkHandler", Process.THREAD_PRIORITY_BACKGROUND);
             handlerThread.start();
             mWorkHandler = new Handler(handlerThread.getLooper());
         }

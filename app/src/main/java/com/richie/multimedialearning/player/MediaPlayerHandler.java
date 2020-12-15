@@ -3,14 +3,16 @@ package com.richie.multimedialearning.player;
 import android.content.Context;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.Process;
 
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * @author Richie on 2019.03.11
  * 播放器控制类，采用单线程模型
+ *
+ * @author Richie on 2019.03.11
  */
 public class MediaPlayerHandler {
     private Handler mPlayerHandler;
@@ -38,7 +40,7 @@ public class MediaPlayerHandler {
 
     public MediaPlayerHandler(Context context) {
         mContext = context;
-        HandlerThread playerThread = new HandlerThread("fusta-player");
+        HandlerThread playerThread = new HandlerThread("media-player", Process.THREAD_PRIORITY_BACKGROUND);
         playerThread.start();
         mPlayerHandler = new Handler(playerThread.getLooper());
     }

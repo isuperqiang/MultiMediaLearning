@@ -8,5 +8,5 @@ public class FFmpegNative {
         System.loadLibrary("ffmpegnative");
     }
 
-    public static native String getVersion();
+    public static native int findDecoder(int codecId);
 }

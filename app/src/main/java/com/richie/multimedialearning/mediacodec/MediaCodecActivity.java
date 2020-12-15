@@ -11,7 +11,6 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.richie.easylog.ILogger;
 import com.richie.easylog.LoggerFactory;
@@ -35,7 +34,7 @@ public class MediaCodecActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_media_codec);
         BarUtils.setStatusBarVisibility(this, false);
-        ConstraintLayout constraintLayout = findViewById(R.id.cl_root);
+        //ConstraintLayout constraintLayout = findViewById(R.id.cl_root);
         //CameraSurfaceView cameraSurfaceView = new CameraSurfaceView(this);
         //constraintLayout.addView(cameraSurfaceView, 0);
 

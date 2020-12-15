@@ -50,8 +50,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA}, 0);
         }
 
-        String version = FFmpegNative.getVersion();
-        Log.d(TAG, "onCreate: " + version);
+        int ret = FFmpegNative.findDecoder(28);
+        Log.d(TAG, "onCreate: " + ret);
     }
 
     @Override

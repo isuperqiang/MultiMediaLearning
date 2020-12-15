@@ -90,7 +90,7 @@ public final class AacPcmCodec {
                         ByteBuffer outputBuffer = outputBuffers[outputBufIndex];
                         outputBuffer.position(outBufferInfo.offset);
                         outputBuffer.limit(outBufferInfo.offset + outBufferInfo.size);
-                        if (outputBytes == null) {
+                        if (outputBytes == null || outputBytes.length < outBufferInfo.size) {
                             outputBytes = new byte[outBufferInfo.size];
                         }
                         outputBuffer.get(outputBytes);
@@ -184,8 +184,6 @@ public final class AacPcmCodec {
                             addADTStoPacket(outData, outPacketSize);
                             outBuffer.get(outData, 7, outBufSize);
                             fosAudio.write(outData, 0, outData.length);
-                        } else {
-                            Log.e(TAG, "error sample! its presentationTimeUs should not lower than before.");
                         }
                     }
                     audioEncoder.releaseOutputBuffer(outputBufIndex, false);

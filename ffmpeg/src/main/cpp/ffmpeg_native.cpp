@@ -3,19 +3,21 @@
 
 #ifndef _Included_cn_richie_ffmpeg_FFmpegNative
 #define _Included_cn_richie_ffmpeg_FFmpegNative
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#include <libavcodec/avcodec.h>
 /*
  * Class:     cn_richie_ffmpeg_FFmpegNative
- * Method:    getVersion
- * Signature: ()Ljava/lang/String;
+ * Method:    findDecoder
+ * Signature: (I)I
  */
-JNIEXPORT jstring JNICALL Java_cn_richie_ffmpeg_FFmpegNative_getVersion
-        (JNIEnv *env, jclass cls) {
-
-    return env->NewStringUTF("qwert");
+JNIEXPORT jint JNICALL Java_cn_richie_ffmpeg_FFmpegNative_findDecoder
+        (JNIEnv *env, jclass cls, jint codecId) {
+    AVCodec *pCodec = avcodec_find_decoder(static_cast<AVCodecID>(codecId));
+    return pCodec != nullptr ? 0 : -1;
 }
 
 #ifdef __cplusplus

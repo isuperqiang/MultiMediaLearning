@@ -23,6 +23,7 @@ import java.util.concurrent.Executors;
  */
 public class AudioRecordEncoder {
     private static final String TAG = "AudioRecordEncoder";
+    private static final boolean VERBOSE = false;
     public static final String MIMETYPE_AUDIO_AAC = "audio/mp4a-latm";
     // 输入源 麦克风
     private final static int AUDIO_SOURCE = MediaRecorder.AudioSource.MIC;
@@ -41,21 +42,25 @@ public class AudioRecordEncoder {
     private AudioRecord mAudioRecord;
     private MediaCodec mMediaCodec;
     private volatile boolean mStopped;
-    private Executor mExecutor = Executors.newSingleThreadExecutor();
+    private final Executor mExecutor = Executors.newSingleThreadExecutor();
 
     /**
      * 创建录音对象
      */
     public void createAudio() {
         // 获得缓冲区字节大小
-        mBufferSizeInBytes = AudioRecord.getMinBufferSize(AudioRecordEncoder.SAMPLE_RATE, AudioRecordEncoder.CHANNEL_CONFIG, AudioRecordEncoder.AUDIO_FORMAT);
-        if (mBufferSizeInBytes <= 0) {
-            throw new RuntimeException("AudioRecord is not available, minBufferSize: " + mBufferSizeInBytes);
+        int bufferSizeInBytes = AudioRecord.getMinBufferSize(AudioRecordEncoder.SAMPLE_RATE,
+                AudioRecordEncoder.CHANNEL_CONFIG, AudioRecordEncoder.AUDIO_FORMAT);
+        if (bufferSizeInBytes <= 0) {
+            throw new RuntimeException("AudioRecord is not available, minBufferSize: " + bufferSizeInBytes);
         }
-        Log.i(TAG, "createAudioRecord minBufferSize: " + mBufferSizeInBytes);
+        mBufferSizeInBytes = bufferSizeInBytes;
+        Log.i(TAG, "createAudioRecord minBufferSize: " + bufferSizeInBytes);
 
-        mAudioRecord = new AudioRecord(AudioRecordEncoder.AUDIO_SOURCE, AudioRecordEncoder.SAMPLE_RATE, AudioRecordEncoder.CHANNEL_CONFIG, AudioRecordEncoder.AUDIO_FORMAT, mBufferSizeInBytes);
-        int state = mAudioRecord.getState();
+        AudioRecord audioRecord = new AudioRecord(AudioRecordEncoder.AUDIO_SOURCE, AudioRecordEncoder.SAMPLE_RATE,
+                AudioRecordEncoder.CHANNEL_CONFIG, AudioRecordEncoder.AUDIO_FORMAT, bufferSizeInBytes);
+        int state = audioRecord.getState();
+        mAudioRecord = audioRecord;
         Log.i(TAG, "createAudio state: " + state + ", initialized: " + (state == AudioRecord.STATE_INITIALIZED));
     }
 
@@ -69,11 +74,12 @@ public class AudioRecordEncoder {
         MediaFormat format = MediaFormat.createAudioFormat(MIMETYPE_AUDIO_AAC, SAMPLE_RATE, CHANNEL_COUNT);
         format.setInteger(MediaFormat.KEY_AAC_PROFILE, MediaCodecInfo.CodecProfileLevel.AACObjectLC);
         format.setInteger(MediaFormat.KEY_BIT_RATE, BIT_RATE);
-        mMediaCodec = MediaCodec.createEncoderByType(MIMETYPE_AUDIO_AAC);
-        mMediaCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+        MediaCodec mediaCodec = MediaCodec.createEncoderByType(MIMETYPE_AUDIO_AAC);
+        mediaCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
+        mMediaCodec = mediaCodec;
     }
 
-    public void start(final File outFile) throws IOException {
+    public void start(final File outFile) {
         mExecutor.execute(new Runnable() {
             @Override
             public void run() {
@@ -87,32 +93,39 @@ public class AudioRecordEncoder {
     }
 
     private void startAsync(File outFile) throws IOException {
-        Log.d(TAG, "start() called with: outFile = [" + outFile + "]");
+        Log.d(TAG, "startAsync() called with: outFile = [" + outFile + "]");
         mStopped = false;
+        MediaCodec mediaCodec = mMediaCodec;
+        AudioRecord audioRecord = mAudioRecord;
+        int bufferSizeInBytes = mBufferSizeInBytes;
         try (OutputStream fos = new FileOutputStream(outFile)) {
-            mMediaCodec.start();
-            mAudioRecord.startRecording();
+            mediaCodec.start();
+            audioRecord.startRecording();
 
-            ByteBuffer[] inputBuffers = mMediaCodec.getInputBuffers();
-            ByteBuffer[] outputBuffers = mMediaCodec.getOutputBuffers();
+            ByteBuffer[] inputBuffers = mediaCodec.getInputBuffers();
+            ByteBuffer[] outputBuffers = mediaCodec.getOutputBuffers();
             MediaCodec.BufferInfo outBufferInfo = new MediaCodec.BufferInfo();
             final long timeoutUs = 10_000;
             while (!mStopped) {
-                int inputBufIndex = mMediaCodec.dequeueInputBuffer(timeoutUs);
+                int inputBufIndex = mediaCodec.dequeueInputBuffer(timeoutUs);
                 if (inputBufIndex >= 0) {
                     ByteBuffer inputBuffer = inputBuffers[inputBufIndex];
                     inputBuffer.clear();
                     int remaining = inputBuffer.remaining();
-                    int bufSize = Math.min(remaining, mBufferSizeInBytes);
+                    int bufSize = Math.min(remaining, bufferSizeInBytes);
                     byte[] buffer = new byte[bufSize];
-                    int readSize = mAudioRecord.read(buffer, 0, buffer.length);
+                    int readSize = audioRecord.read(buffer, 0, buffer.length);
                     if (readSize >= 0) {
                         inputBuffer.put(buffer);
                         inputBuffer.limit(buffer.length);
-                        mMediaCodec.queueInputBuffer(inputBufIndex, 0, readSize, 0, 0);
+                        mediaCodec.queueInputBuffer(inputBufIndex, 0, readSize, 0, 0);
+                        if (VERBOSE) {
+                            Log.v(TAG, "queueInputBuffer index:" + inputBufIndex + ", size:" + readSize
+                                    + ", remaining:" + remaining);
+                        }
                     }
 
-                    int outputBufferIndex = mMediaCodec.dequeueOutputBuffer(outBufferInfo, timeoutUs);
+                    int outputBufferIndex = mediaCodec.dequeueOutputBuffer(outBufferInfo, timeoutUs);
                     while (outputBufferIndex >= 0) {
                         ByteBuffer outputBuffer = outputBuffers[outputBufferIndex];
                         outputBuffer.position(outBufferInfo.offset);
@@ -122,17 +135,17 @@ public class AudioRecordEncoder {
                         outputBuffer.get(chunkAudio, 7, outBufferInfo.size);
                         outputBuffer.position(outBufferInfo.offset);
                         fos.write(chunkAudio);
-                        mMediaCodec.releaseOutputBuffer(outputBufferIndex, false);
-                        outputBufferIndex = mMediaCodec.dequeueOutputBuffer(outBufferInfo, timeoutUs);
+                        mediaCodec.releaseOutputBuffer(outputBufferIndex, false);
+                        outputBufferIndex = mediaCodec.dequeueOutputBuffer(outBufferInfo, timeoutUs);
                     }
                 }
             }
         } finally {
             Log.i(TAG, "startAsync release");
-            mAudioRecord.stop();
-            mAudioRecord.release();
-            mMediaCodec.stop();
-            mMediaCodec.release();
+            audioRecord.stop();
+            audioRecord.release();
+            mediaCodec.stop();
+            mediaCodec.release();
         }
     }
 

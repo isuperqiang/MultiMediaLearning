@@ -5,6 +5,7 @@ import android.media.AudioManager;
 import android.media.AudioTrack;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.Process;
 import android.util.Log;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -76,7 +77,7 @@ public class PcmPlayer extends BaseMediaPlayer {
         }
 
         if (mPlayerHandler == null) {
-            HandlerThread handlerThread = new HandlerThread("pcm-player");
+            HandlerThread handlerThread = new HandlerThread("pcm-player", Process.THREAD_PRIORITY_BACKGROUND);
             handlerThread.start();
             mPlayerHandler = new Handler(handlerThread.getLooper());
         }
