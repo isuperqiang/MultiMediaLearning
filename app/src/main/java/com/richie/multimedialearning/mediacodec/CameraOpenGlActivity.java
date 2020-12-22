@@ -55,13 +55,7 @@ public class CameraOpenGlActivity extends AppCompatActivity implements View.OnCl
                 boolean started = v.getTag() != null && (boolean) v.getTag();
                 ((Button) v).setText(started ? "录像" : "停止");
                 v.setTag(!started);
-                if (started) {
-                    // stop
-                    mCameraRenderer.setRecordVideo(false);
-                } else {
-                    // start
-                    mCameraRenderer.setRecordVideo(true);
-                }
+                mCameraRenderer.setRecordVideo(!started);
             }
             break;
             default:

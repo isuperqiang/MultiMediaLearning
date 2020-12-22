@@ -59,13 +59,13 @@ public class CameraSurfaceCodec {
     private int mRequestDrawFrame;
     private boolean mRequestRelease = true;
     private OnEncodeListener mOnEncodeListener;
-    private boolean mEndOfStream;
+    private boolean mEndOfVideo;
     private boolean mEndOfAudio;
     private final Object mLockCodec = new Object();
     private final Object mLockDraw = new Object();
-    private ExecutorService mExecutorsCodecVideo = Executors.newSingleThreadExecutor();
-    private ExecutorService mExecutorsCodecAudio = Executors.newSingleThreadExecutor();
-    private ExecutorService mExecutorsDrawer = Executors.newSingleThreadExecutor();
+    private final ExecutorService mExecutorsCodecVideo = Executors.newSingleThreadExecutor();
+    private final ExecutorService mExecutorsCodecAudio = Executors.newSingleThreadExecutor();
+    private final ExecutorService mExecutorsDrawer = Executors.newSingleThreadExecutor();
 
     public void setOnEncodeListener(OnEncodeListener onEncodeListener) {
         mOnEncodeListener = onEncodeListener;
@@ -75,7 +75,7 @@ public class CameraSurfaceCodec {
         Log.d(TAG, "create() width = [" + width + "], height = [" + height + "], outputPath = [" + outputPath + "]");
         synchronized (mLockCodec) {
             mEndOfAudio = false;
-            mEndOfStream = false;
+            mEndOfVideo = false;
             mMuxerAudioStarted = false;
             mMuxerVideoStarted = false;
             mMuxerStarted = false;
@@ -126,15 +126,16 @@ public class CameraSurfaceCodec {
                 Log.i(TAG, "start video codec");
                 ByteBuffer[] outputBuffers = mediaCodec.getOutputBuffers();
                 int trackIndex = -1;
+                final long timeoutUs = 10_000;
                 while (true) {
                     synchronized (mLockCodec) {
-                        if (mEndOfStream) {
+                        if (mEndOfVideo) {
                             Log.d(TAG, "sending EOS to video encoder");
                             mediaCodec.signalEndOfInputStream();
-                            mEndOfStream = false;
+                            mEndOfVideo = false;
                         }
                     }
-                    int outBufIndex = mediaCodec.dequeueOutputBuffer(bufferInfo, 30_000);
+                    int outBufIndex = mediaCodec.dequeueOutputBuffer(bufferInfo, timeoutUs);
                     if (outBufIndex == MediaCodec.INFO_TRY_AGAIN_LATER) {
                         // no output available yet
                         if (VERBOSE) {
@@ -143,6 +144,7 @@ public class CameraSurfaceCodec {
                     } else if (outBufIndex == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
                         // not expected for an encoder
                         outputBuffers = mediaCodec.getOutputBuffers();
+                        Log.d(TAG, "video INFO_OUTPUT_BUFFERS_CHANGED");
                     } else if (outBufIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
                         // should happen before receiving buffers, and should only happen once
                         if (mMuxerVideoStarted) {
@@ -154,6 +156,7 @@ public class CameraSurfaceCodec {
                         // now that we have the Magic Goodies, start the muxer
                         synchronized (mLockCodec) {
                             trackIndex = mMuxer.addTrack(newFormat);
+                            Log.i(TAG, "run: muxer add video track index " + trackIndex);
                             mMuxerVideoStarted = true;
                             if (!mMuxerStarted && mMuxerAudioStarted) {
                                 Log.i(TAG, "start muxer for video");
@@ -184,12 +187,12 @@ public class CameraSurfaceCodec {
                             mMuxer.writeSampleData(trackIndex, encodedData, bufferInfo);
                             mVideoPrevOutputPTSUs = bufferInfo.presentationTimeUs;
                             if (VERBOSE) {
-                                Log.d(TAG, "sent video " + bufferInfo.size + " bytes to muxer");
+                                Log.d(TAG, "sent video " + bufferInfo.size + " bytes to muxer. pts: " + mVideoPrevOutputPTSUs);
                             }
                         }
                         mediaCodec.releaseOutputBuffer(outBufIndex, false);
                         if ((bufferInfo.flags & MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                            Log.d(TAG, "end of stream reached");
+                            Log.d(TAG, "end of video stream reached");
                             synchronized (mLockCodec) {
                                 mMuxerStoppedCount++;
                             }
@@ -204,7 +207,7 @@ public class CameraSurfaceCodec {
                 synchronized (mLockCodec) {
                     if (mMuxerStoppedCount == 2) {
                         if (mMuxer != null) {
-                            Log.i(TAG, "run: release muxer");
+                            Log.i(TAG, "run: release muxer from video");
                             mMuxer.stop();
                             mMuxer.release();
                             mMuxer = null;
@@ -258,7 +261,7 @@ public class CameraSurfaceCodec {
                 ByteBuffer[] inputBuffers = mediaCodec.getInputBuffers();
                 ByteBuffer[] outputBuffers = mediaCodec.getOutputBuffers();
                 MediaCodec.BufferInfo outBufferInfo = new MediaCodec.BufferInfo();
-                final long timeoutUs = 30_000;
+                final long timeoutUs = 10_000;
                 int trackIndex = -1;
                 audioRecord.startRecording();
                 while (true) {
@@ -299,6 +302,7 @@ public class CameraSurfaceCodec {
                     } else if (outBufIndex == MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED) {
                         // not expected for an encoder
                         outputBuffers = mediaCodec.getOutputBuffers();
+                        Log.d(TAG, "run: audio INFO_OUTPUT_BUFFERS_CHANGED");
                     } else if (outBufIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
                         // should happen before receiving buffers, and should only happen once
                         if (mMuxerAudioStarted) {
@@ -310,6 +314,7 @@ public class CameraSurfaceCodec {
                         // now that we have the Magic Goodies, start the muxer
                         synchronized (mLockCodec) {
                             trackIndex = mMuxer.addTrack(newFormat);
+                            Log.i(TAG, "run: muxer add audio track index " + trackIndex);
                             mMuxerAudioStarted = true;
                             if (!mMuxerStarted && mMuxerVideoStarted) {
                                 Log.i(TAG, "start muxer for audio");
@@ -362,7 +367,7 @@ public class CameraSurfaceCodec {
                 synchronized (mLockCodec) {
                     if (mMuxerStoppedCount == 2) {
                         if (mMuxer != null) {
-                            Log.i(TAG, "run: release muxer");
+                            Log.i(TAG, "run: release muxer from audio");
                             mMuxer.stop();
                             mMuxer.release();
                             mMuxer = null;
@@ -463,7 +468,7 @@ public class CameraSurfaceCodec {
             mLockDraw.notifyAll();
         }
         synchronized (mLockCodec) {
-            mEndOfStream = true;
+            mEndOfVideo = true;
             mEndOfAudio = true;
             mLockCodec.notifyAll();
         }

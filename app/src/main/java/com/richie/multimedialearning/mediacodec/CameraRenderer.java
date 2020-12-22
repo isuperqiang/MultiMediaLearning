@@ -137,7 +137,7 @@ public class CameraRenderer implements GLSurfaceView.Renderer {
                     try (InputStream is = new FileInputStream(path)) {
                         FileUtils.copyFile(is, dest);
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        Log.e(TAG, "onStop: ", e);
                     }
                     mActivity.runOnUiThread(new Runnable() {
                         @Override

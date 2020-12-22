@@ -37,5 +37,5 @@ dependencies {
     implementation 'com.google.android.exoplayer:exoplayer-core:2.9.6'
     implementation project(path: ':ffmpeg')
     testImplementation 'junit:junit:4.13'
-    implementation 'com.github.isuperqiang:AndEasyLog:1.6.0'
+    implementation 'com.github.isuperqiang:AndEasyLog:2.0.0'
 }

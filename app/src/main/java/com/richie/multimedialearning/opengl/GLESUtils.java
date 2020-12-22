@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.pm.ConfigurationInfo;
 import android.graphics.Bitmap;
 import android.opengl.GLES20;
-import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
 import android.os.AsyncTask;
@@ -19,10 +18,6 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
-import javax.microedition.khronos.egl.EGL10;
-import javax.microedition.khronos.egl.EGLConfig;
-import javax.microedition.khronos.egl.EGLContext;
-import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.opengles.GL10;
 
 public final class GLESUtils {
@@ -102,27 +97,6 @@ public final class GLESUtils {
         if (error != GLES20.GL_NO_ERROR) {
             String msg = op + ": glError 0x" + Integer.toHexString(error);
             Log.e(TAG, "checkGlError: " + msg);
-        }
-    }
-
-    public static class ContextFactory implements GLSurfaceView.EGLContextFactory {
-        private static int EGL_CONTEXT_CLIENT_VERSION = 0x3098;
-
-        @Override
-        public EGLContext createContext(EGL10 egl, EGLDisplay display, EGLConfig eglConfig) {
-            double glVersion = 3.0;
-            Log.d(TAG, "creating OpenGL ES " + glVersion + " context");
-            int[] attrib_list = {EGL_CONTEXT_CLIENT_VERSION, (int) glVersion,
-                    EGL10.EGL_NONE};
-            // attempt to create a OpenGL ES 3.0 context
-            EGLContext context = egl.eglCreateContext(
-                    display, eglConfig, EGL10.EGL_NO_CONTEXT, attrib_list);
-            return context; // returns null if 3.0 is not supported;
-        }
-
-        @Override
-        public void destroyContext(EGL10 egl, EGLDisplay display, EGLContext context) {
-
         }
     }
 
@@ -286,7 +260,7 @@ public final class GLESUtils {
         GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bmp, 0);
         // 生成 MIP 贴图
         GLES20.glGenerateMipmap(GLES20.GL_TEXTURE_2D);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, GLES20.GL_NONE);
         return textureHandles[0];
     }
 
@@ -384,7 +358,8 @@ public final class GLESUtils {
         });
 
         GLES20.glViewport(originalViewport[0], originalViewport[1], originalViewport[2], originalViewport[3]);
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, GLES20.GL_NONE);
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, GLES20.GL_NONE);
         deleteTextureId(fboTex);
         deleteFBO(fboId);
     }
@@ -424,8 +399,8 @@ public final class GLESUtils {
             Log.e(TAG, "glFramebufferTexture2D error");
         }
         //we are done, reset
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, 0);
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, 0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, GLES20.GL_NONE);
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, GLES20.GL_NONE);
     }
 
     public static void deleteFBO(int[] fboId) {
