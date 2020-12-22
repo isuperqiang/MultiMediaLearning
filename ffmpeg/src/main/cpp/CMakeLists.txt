@@ -77,6 +77,7 @@ add_library( # Sets the name of the library.
 
         # Provides a relative path to your source file(s).
         ffmpeg_native.cpp
+        log_util.h
         )
 
 # 指定编译目标库时，cmake要链接的库
