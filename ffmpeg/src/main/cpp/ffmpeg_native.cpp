@@ -39,8 +39,6 @@ JNIEXPORT jstring JNICALL Java_cn_richie_ffmpeg_FFmpegNative_getVersion
     strcat(strBuf, AV_STRINGIFY(LIBSWRESAMPLE_VERSION));
     strcat(strBuf, "\nlibswscale: ");
     strcat(strBuf, AV_STRINGIFY(LIBSWSCALE_VERSION));
-    strcat(strBuf, "\navcodec_license: ");
-    strcat(strBuf, avcodec_license());
     return env->NewStringUTF(strBuf);
 }
 

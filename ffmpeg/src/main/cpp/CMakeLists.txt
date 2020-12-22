@@ -5,7 +5,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11")
 
 # 1. 定义so库和头文件所在目录，方面后面使用
 set(ffmpeg_lib_dir ${CMAKE_SOURCE_DIR}/../jniLibs/${ANDROID_ABI})
-set(ffmpeg_head_dir ${CMAKE_SOURCE_DIR}/include)
+set(ffmpeg_head_dir ${CMAKE_SOURCE_DIR}/media/include)
 
 # 2. 添加头文件目录
 include_directories(${ffmpeg_head_dir})
@@ -78,6 +78,10 @@ add_library( # Sets the name of the library.
         # Provides a relative path to your source file(s).
         ffmpeg_native.cpp
         log_util.h
+        media/decoder/decode_state.h
+        media/decoder/i_decoder.h
+        media/decoder/base_decoder.h
+        media/decoder/base_decoder.cpp
         )
 
 # 指定编译目标库时，cmake要链接的库

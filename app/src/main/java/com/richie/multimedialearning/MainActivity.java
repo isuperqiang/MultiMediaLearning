@@ -6,7 +6,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -16,12 +15,11 @@ import androidx.core.content.ContextCompat;
 import com.richie.multimedialearning.audiorecord.AudioRecordActivity;
 import com.richie.multimedialearning.audiotrack.AudioTrackActivity;
 import com.richie.multimedialearning.camera.CameraPreviewActivity;
+import com.richie.multimedialearning.ffmpeg.FFmpegMenuActivity;
 import com.richie.multimedialearning.mediacodec.CodecActivity;
 import com.richie.multimedialearning.muxerextract.MediaMuxerExtractActivity;
 import com.richie.multimedialearning.opengl.OpenGLActivity;
 import com.richie.multimedialearning.surface.SurfaceActivity;
-
-import cn.richie.ffmpeg.FFmpegNative;
 
 /**
  * 功能选择界面
@@ -42,6 +40,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.btn_media_muxur_extract).setOnClickListener(this);
         findViewById(R.id.btn_media_codec).setOnClickListener(this);
         findViewById(R.id.btn_opengles).setOnClickListener(this);
+        findViewById(R.id.btn_ffmpeg).setOnClickListener(this);
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
                 || ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
@@ -49,9 +48,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
                     Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA}, 0);
         }
-
-        String version = FFmpegNative.getVersion();
-        Log.d(TAG, "onCreate: ffmpeg version: " + version);
     }
 
     @Override
@@ -119,6 +115,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
                 });
                 builder.show();
+            }
+            break;
+            case R.id.btn_ffmpeg: {
+                intent = new Intent(this, FFmpegMenuActivity.class);
             }
             break;
             default:
