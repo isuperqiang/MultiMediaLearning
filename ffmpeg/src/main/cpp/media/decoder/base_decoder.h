@@ -10,20 +10,21 @@
 #include <thread>
 #include "i_decoder.h"
 #include "decode_state.h"
-#include "../../log_util.h"
+#include "../../utils/logger.h"
 
 
 extern "C" {
-#include <../include/libavcodec/avcodec.h>
-#include <../include/libavformat/avformat.h>
-#include <../include/libavutil/frame.h>
-#include <../include/libavutil/time.h>
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavutil/frame.h>
+#include <libavutil/time.h>
 }
 
 class BaseDecoder : public IDecoder {
 private:
-    const char *tag = "BaseDecoder";
-//-------------定义解码相关------------------------------
+    const char *TAG = "BaseDecoder";
+
+    //-------------定义解码相关------------------------------
     // 解码信息上下文
     AVFormatContext *m_format_ctx = NULL;
 
@@ -54,8 +55,30 @@ private:
     // 数据流索引
     int m_stream_index = -1;
 
+    // -------------------定义线程相关-----------------------------
+    // 线程依附的JVM环境
+    JavaVM *m_jvm_for_thread = NULL;
+
+    // 原始路径jstring引用，否则无法在线程中操作
+    jobject m_path_ref = NULL;
+
+    // 经过转换的路径
+    const char *m_path = NULL;
+
+    // 线程等待锁变量
+    pthread_mutex_t m_mutex = PTHREAD_MUTEX_INITIALIZER;
+    pthread_cond_t m_cond = PTHREAD_COND_INITIALIZER;
+
+    // 为合成器提供解码
+    bool m_for_synthesizer = false;
 
     //-----------------私有方法------------------------------
+    /**
+    * 初始化
+    * @param env jvm环境
+    * @param path 本地文件路径
+    */
+    void Init(JNIEnv *env, jstring path);
 
     /**
      * 初始化 FFmpeg 相关的参数
@@ -67,6 +90,11 @@ private:
      * 分配解码过程中需要的缓存
      */
     void AllocFrameBuffer();
+
+    /**
+     * 新建解码线程
+     */
+    void CreateDecodeThread();
 
     /**
      * 循环解码
@@ -89,52 +117,130 @@ private:
      */
     void SyncRender();
 
-    AVFrame *DecodeOneFrame();
-
-
-    // -------------------定义线程相关-----------------------------
-    // 线程依附的JVM环境
-    JavaVM *m_jvm_for_thread = NULL;
-
-    // 原始路径jstring引用，否则无法在线程中操作
-    jobject m_path_ref = NULL;
-
-    // 经过转换的路径
-    const char *m_path = NULL;
-
-    // 线程等待锁变量
-    pthread_mutex_t m_mutex = PTHREAD_MUTEX_INITIALIZER;
-    pthread_cond_t m_cond = PTHREAD_COND_INITIALIZER;
-
-
-    /**
-     * 新建解码线程
-     */
-    void CreateDecodeThread();
-
     /**
      * 静态解码方法，用于解码线程回调
      * @param that 当前解码器
      */
     static void Decode(std::shared_ptr<BaseDecoder> that);
 
-protected:
+public:
+
+    BaseDecoder(JNIEnv *env, jstring path, bool for_synthesizer);
+
+    virtual ~BaseDecoder();
 
     /**
-    * 进入等待
+    * 视频宽度
+    * @return
     */
-    void Wait(long second = 0);
+    int width() {
+        return m_codec_ctx->width;
+    }
 
     /**
-     * 恢复解码
+     * 视频高度
+     * @return
      */
-    void SendSignal();
+    int height() {
+        return m_codec_ctx->height;
+    }
+
+    long duration() {
+        return m_duration;
+    }
+
+    void Start() override;
+
+    void Pause() override;
+
+    void Stop() override;
+
+    bool IsPlaying() override;
+
+    long GetDuration() override;
+
+    long GetCurrPos() override;
+
+    void SetStateReceiver(IDecodeStateCb *cb) override {
+        m_state_cb = cb;
+    }
+
+    char *GetStateStr() {
+        switch (m_state) {
+            case STOP:
+                return (char *) "STOP";
+            case START:
+                return (char *) "START";
+            case DECODING:
+                return (char *) "DECODING";
+            case PAUSE:
+                return (char *) "PAUSE";
+            case FINISH:
+                return (char *) "FINISH";
+            default:
+                return (char *) "UNKNOW";
+        }
+    }
+
+protected:
+    IDecodeStateCb *m_state_cb = NULL;
 
     /**
-    * 子类准备回调方法
-    * @note 注：在解码线程中回调
-    * @param env 解码线程绑定的JVM环境
+    * 是否为合成器提供解码
+    * @return true 为合成器提供解码 false 解码播放
     */
+    bool ForSynthesizer() {
+        return m_for_synthesizer;
+    }
+
+    const char *path() {
+        return m_path;
+    }
+
+    /**
+    * 解码器上下文
+    * @return
+    */
+    AVCodecContext *codec_cxt() {
+        return m_codec_ctx;
+    }
+
+    /**
+    * 视频数据编码格式
+    * @return
+    */
+    AVPixelFormat video_pixel_format() {
+        return m_codec_ctx->pix_fmt;
+    }
+
+    /**
+     * 获取解码时间基
+     */
+    AVRational time_base() {
+        return m_format_ctx->streams[m_stream_index]->time_base;
+    }
+
+    /**
+     * 解码一帧数据
+     * @return
+     */
+    AVFrame *DecodeOneFrame();
+
+    /**
+     * 音视频索引
+     */
+    virtual AVMediaType GetMediaType() = 0;
+
+    /**
+     * 是否需要自动循环解码
+     */
+    virtual bool NeedLoopDecode() = 0;
+
+    /**
+     * 子类准备回调方法
+     * @note 注：在解码线程中回调
+     * @param env 解码线程绑定的JVM环境
+     */
     virtual void Prepare(JNIEnv *env) = 0;
 
     /**
@@ -149,26 +255,23 @@ protected:
      */
     virtual void Release() = 0;
 
-public:
+    /**
+     * Log前缀
+     */
+    virtual const char *const LogSpec() = 0;
 
-    BaseDecoder(JNIEnv *env, jstring path);
+    /**
+     * 进入等待
+     */
+    void Wait(long second = 0, long ms = 0);
 
-    virtual ~BaseDecoder();
+    /**
+     * 恢复解码
+     */
+    void SendSignal();
 
-    void Start() override;
+    void CallbackState(DecodeState status);
 
-    void Pause() override;
-
-    void Stop() override;
-
-    bool IsPlaying() override;
-
-    long GetDuration() override;
-
-    long GetCurrentPosition() override;
-
-    void Init(JNIEnv *env, jstring path);
 };
-
 
 #endif //MULTIMEDIALEARNING_BASE_DECODER_H
