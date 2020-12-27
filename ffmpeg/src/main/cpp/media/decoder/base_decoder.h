@@ -121,7 +121,7 @@ private:
      * 静态解码方法，用于解码线程回调
      * @param that 当前解码器
      */
-    static void Decode(std::shared_ptr<BaseDecoder> that);
+    static void Decode(const std::shared_ptr<BaseDecoder> &that);
 
 public:
 
@@ -178,7 +178,7 @@ public:
             case FINISH:
                 return (char *) "FINISH";
             default:
-                return (char *) "UNKNOW";
+                return (char *) "UNKNOWN";
         }
     }
 

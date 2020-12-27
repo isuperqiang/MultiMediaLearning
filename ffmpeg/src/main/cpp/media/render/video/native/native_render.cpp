@@ -8,9 +8,7 @@ NativeRender::NativeRender(JNIEnv *env, jobject surface) {
     m_surface_ref = env->NewGlobalRef(surface);
 }
 
-NativeRender::~NativeRender() {
-//    delete m_surface_ref;
-}
+NativeRender::~NativeRender() = default;
 
 void NativeRender::InitRender(JNIEnv *env, int video_width, int video_height, int *dst_size) {
     // 初始化窗口

@@ -1,5 +1,6 @@
 package com.richie.multimedialearning.ffmpeg;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -31,7 +32,8 @@ public class FFmpegMenuActivity extends AppCompatActivity implements View.OnClic
     public void onClick(View v) {
         int id = v.getId();
         if (id == R.id.btn_ffmpeg_video) {
-
+            Intent intent = new Intent(this, FFmpegVideoActivity.class);
+            startActivity(intent);
         } else if (id == R.id.btn_ffmpeg_audio) {
 
         }

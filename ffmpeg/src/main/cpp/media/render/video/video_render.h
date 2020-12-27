@@ -11,7 +11,15 @@
 
 class VideoRender {
 public:
-    virtual void InitRender(JNIEnv *env, int video_Width, int video_height, int *dst_size) = 0;
+    VideoRender() {
+
+    }
+
+    ~VideoRender() {
+
+    }
+
+    virtual void InitRender(JNIEnv *env, int video_width, int video_height, int *dst_size) = 0;
 
     virtual void Render(OneFrame *oneFrame) = 0;
 

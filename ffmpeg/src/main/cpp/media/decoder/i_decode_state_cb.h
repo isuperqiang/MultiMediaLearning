@@ -8,7 +8,7 @@
 
 #include "../one_frame.h"
 
-//声明IDecoder，在cpp中include，编码重复引用
+// 声明IDecoder，在cpp中include，避免重复引用
 class IDecoder;
 
 class IDecodeStateCb {

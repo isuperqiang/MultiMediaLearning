@@ -86,12 +86,19 @@ add_library( # Sets the name of the library.
         media/decoder/i_decode_state_cb.cpp
         media/decoder/video/v_decoder.h
         media/decoder/video/v_decoder.cpp
+        media/decoder/video/v_decoder.cpp
+        media/decoder/audio/audio_decoder.h
+        media/decoder/audio/audio_decoder.cpp
         media/render/video/video_render.h
         media/render/video/native/native_render.h
         media/render/video/native/native_render.cpp
-        media/player/player.h
-        media/player/player.cpp
+        media/render/audio/audio_render.h
+        media/render/audio/opensl_render.h
+        media/render/audio/opensl_render.cpp
+        media/player/default/player.h
+        media/player/default/player.cpp
         media/one_frame.h
+        media/const.h
         utils/logger.h
         utils/timer.h
         )
@@ -110,6 +117,11 @@ target_link_libraries(
         swscale
         avformat
         avdevice
+
+        -landroid
+        OpenSLES
+        -lEGL
+        -lGLESv2
 
         # Links the target library to the log library
         # included in the NDK.

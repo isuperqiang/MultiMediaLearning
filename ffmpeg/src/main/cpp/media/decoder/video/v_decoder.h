@@ -26,21 +26,21 @@ private:
     const AVPixelFormat DST_FORMAT = AV_PIX_FMT_RGBA;
 
     //存放YUV转换为RGB后的数据
-    AVFrame *m_rgb_frame = NULL;
+    AVFrame *m_rgb_frame = nullptr;
 
-    uint8_t *m_buf_for_rgb_frame = NULL;
+    uint8_t *m_buf_for_rgb_frame = nullptr;
 
     //视频格式转换器
-    SwsContext *m_sws_ctx = NULL;
+    SwsContext *m_sws_ctx = nullptr;
 
     //视频渲染器
-    VideoRender *m_video_render = NULL;
+    VideoRender *m_video_render = nullptr;
 
     //显示的目标宽
-    int m_dst_w;
+    int m_dst_w{};
 
     //显示的目标高
-    int m_dst_h;
+    int m_dst_h{};
 
     /**
      * 初始化渲染器
@@ -98,6 +98,5 @@ protected:
         return "VIDEO";
     };
 };
-
 
 #endif //MULTIMEDIALEARNING_V_DECODER_H

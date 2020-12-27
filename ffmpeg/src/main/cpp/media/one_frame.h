@@ -15,16 +15,16 @@ extern "C" {
 
 class OneFrame {
 public:
-    uint8_t *data = NULL;
+    uint8_t *data = nullptr;
     int line_size;
     int64_t pts;
     AVRational time_base;
-    uint8_t *ext_data = NULL;
+    uint8_t *ext_data = nullptr;
     // 是否自动回收data和ext_data
     bool autoRecycle = true;
 
     OneFrame(uint8_t *data, int line_size, int64_t pts, AVRational time_base,
-             uint8_t *ext_data = NULL, bool autoRecycle = true) {
+             uint8_t *ext_data = nullptr, bool autoRecycle = true) {
         this->data = data;
         this->line_size = line_size;
         this->pts = pts;
@@ -35,13 +35,13 @@ public:
 
     ~OneFrame() {
         if (autoRecycle) {
-            if (data != NULL) {
+            if (data != nullptr) {
                 free(data);
-                data = NULL;
+                data = nullptr;
             }
-            if (ext_data != NULL) {
+            if (ext_data != nullptr) {
                 free(ext_data);
-                ext_data = NULL;
+                ext_data = nullptr;
             }
         }
     }

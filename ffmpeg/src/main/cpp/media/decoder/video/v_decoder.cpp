@@ -1,7 +1,7 @@
 //
 // Created by Richie on 2020/12/23 0023.
 //
-
+// 视频解码器
 #include "v_decoder.h"
 
 VideoDecoder::VideoDecoder(JNIEnv *env, jstring path, bool for_synthesizer)

@@ -34,7 +34,7 @@ void BaseDecoder::CreateDecodeThread() {
     t.detach();
 }
 
-void BaseDecoder::Decode(std::shared_ptr<BaseDecoder> that) {
+void BaseDecoder::Decode(const std::shared_ptr<BaseDecoder> &that) {
     JNIEnv *env;
 
     //将线程附加到虚拟机，并获取env

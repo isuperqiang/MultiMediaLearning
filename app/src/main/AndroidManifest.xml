@@ -19,9 +19,9 @@
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:maxAspectRatio="2.4"
         android:resizeableActivity="false"
         android:supportsRtl="false"
-        android:maxAspectRatio="2.4"
         android:theme="@style/AppTheme">
         <activity
             android:name=".mediacodec.CodecActivity"
@@ -52,9 +52,8 @@
         <activity
             android:name=".mediacodec.CameraOpenGlActivity"
             android:theme="@style/Theme.AppCompat.NoActionBar" />
-        <activity
-            android:name=".ffmpeg.FFmpegMenuActivity"
-            android:theme="@style/Theme.AppCompat.NoActionBar" />
+        <activity android:name=".ffmpeg.FFmpegMenuActivity" />
+        <activity android:name=".ffmpeg.FFmpegVideoActivity" />
     </application>
 
 </manifest>

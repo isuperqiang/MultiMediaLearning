@@ -23,16 +23,16 @@ private:
     jobject m_surface_ref = nullptr;
 
     // 存放输出到屏幕的缓存数据
-    ANativeWindow_Buffer m_out_buffer;
+    ANativeWindow_Buffer m_out_buffer{};
 
     // 本地窗口
     ANativeWindow *m_native_window = nullptr;
 
     //显示的目标宽
-    int m_dst_w;
+    int m_dst_w{};
 
     //显示的目标高
-    int m_dst_h;
+    int m_dst_h{};
 
 public:
     NativeRender(JNIEnv *env, jobject surface);
