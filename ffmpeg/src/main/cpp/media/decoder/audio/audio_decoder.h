@@ -96,7 +96,7 @@ protected:
 
     void Render(AVFrame *frame) override;
 
-    void Release() override;
+    void Release(JNIEnv *env) override;
 
     bool NeedLoopDecode() override {
         return true;

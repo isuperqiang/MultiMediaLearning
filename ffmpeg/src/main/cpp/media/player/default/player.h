@@ -27,7 +27,7 @@ public:
 
     void pause();
 
-    void release();
+    void release(JNIEnv *env);
 };
 
 #endif //MULTIMEDIALEARNING_PLAYER_H

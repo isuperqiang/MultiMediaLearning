@@ -92,7 +92,7 @@ protected:
     /**
      * 释放回调
      */
-    void Release() override;
+    void Release(JNIEnv *env) override;
 
     const char *const LogSpec() override {
         return "VIDEO";

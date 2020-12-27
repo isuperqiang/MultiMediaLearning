@@ -290,7 +290,7 @@ void BaseDecoder::DoneDecode(JNIEnv *env) {
     }
 
     // 通知子类释放资源
-    Release();
+    Release(env);
 }
 
 void BaseDecoder::Wait(long second, long ms) {

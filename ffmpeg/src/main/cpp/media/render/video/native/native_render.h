@@ -43,7 +43,7 @@ public:
 
     void Render(OneFrame *one_frame) override;
 
-    void ReleaseRender() override;
+    void ReleaseRender(JNIEnv *env) override;
 };
 
 #endif //MULTIMEDIALEARNING_NATIVE_RENDER_H

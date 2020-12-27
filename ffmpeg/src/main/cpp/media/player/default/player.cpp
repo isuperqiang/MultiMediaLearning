@@ -37,9 +37,9 @@ void Player::pause() {
     }
 }
 
-void Player::release() {
+void Player::release(JNIEnv *env) {
     if (m_v_render != nullptr) {
-        m_v_render->ReleaseRender();
+        m_v_render->ReleaseRender(env);
         m_a_render->ReleaseRender();
     }
 }

@@ -23,7 +23,7 @@ public:
 
     virtual void Render(OneFrame *oneFrame) = 0;
 
-    virtual void ReleaseRender() = 0;
+    virtual void ReleaseRender(JNIEnv *env) = 0;
 };
 
 #endif //MULTIMEDIALEARNING_VIDEO_RENDER_H

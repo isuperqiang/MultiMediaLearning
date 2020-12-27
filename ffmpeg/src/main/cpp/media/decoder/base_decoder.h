@@ -253,7 +253,7 @@ protected:
     /**
      * 子类释放资源回调方法
      */
-    virtual void Release() = 0;
+    virtual void Release(JNIEnv *env) = 0;
 
     /**
      * Log前缀

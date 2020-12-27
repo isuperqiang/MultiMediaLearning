@@ -52,7 +52,10 @@ void NativeRender::Render(OneFrame *one_frame) {
     ANativeWindow_unlockAndPost(m_native_window);
 }
 
-void NativeRender::ReleaseRender() {
+void NativeRender::ReleaseRender(JNIEnv *env) {
+    if (m_surface_ref != nullptr) {
+        env->DeleteGlobalRef(m_surface_ref);
+    }
     if (m_native_window != nullptr) {
         ANativeWindow_release(m_native_window);
     }

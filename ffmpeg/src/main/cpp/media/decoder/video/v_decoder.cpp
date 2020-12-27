@@ -75,7 +75,7 @@ bool VideoDecoder::NeedLoopDecode() {
     return true;
 }
 
-void VideoDecoder::Release() {
+void VideoDecoder::Release(JNIEnv *env) {
     LOGE(TAG, "[VIDEO] release")
     if (m_rgb_frame != nullptr) {
         av_frame_free(&m_rgb_frame);
@@ -90,7 +90,7 @@ void VideoDecoder::Release() {
         m_sws_ctx = nullptr;
     }
     if (m_video_render != nullptr) {
-        m_video_render->ReleaseRender();
+        m_video_render->ReleaseRender(env);
         m_video_render = nullptr;
     }
 }

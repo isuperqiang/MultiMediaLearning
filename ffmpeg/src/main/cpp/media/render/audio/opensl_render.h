@@ -60,7 +60,7 @@ private:
     SLVolumeItf m_pcm_player_volume = nullptr;
 
     //缓冲器队列接口
-    SLAndroidSimpleBufferQueueItf m_pcm_buffer;
+    SLAndroidSimpleBufferQueueItf m_pcm_buffer{};
 
     std::queue<PcmData *> m_data_queue;
 
@@ -78,7 +78,7 @@ private:
 
     void BlockEnqueue();
 
-    static bool CheckError(SLresult result, std::string hint);
+    static bool CheckError(SLresult result, const std::string &hint);
 
     void static sRenderPcm(OpenSLRender *that);
 

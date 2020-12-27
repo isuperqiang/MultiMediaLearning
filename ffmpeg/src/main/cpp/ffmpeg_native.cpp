@@ -106,7 +106,7 @@ JNIEXPORT void JNICALL Java_cn_richie_ffmpeg_FFmpegNative_releasePlayer
         (JNIEnv *env, jobject obj) {
     jlong ptr = getHandle(env, obj);
     if (ptr > 0) {
-        ((Player *) ptr)->release();
+        ((Player *) ptr)->release(env);
     }
 }
 

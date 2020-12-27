@@ -98,7 +98,7 @@ void AudioDecoder::Render(AVFrame *frame) {
     }
 }
 
-void AudioDecoder::Release() {
+void AudioDecoder::Release(JNIEnv *env) {
     if (m_swr != nullptr) {
         swr_free(&m_swr);
     }

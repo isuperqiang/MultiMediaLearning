@@ -9,11 +9,9 @@
 #include "opensl_render.h"
 #include "../../../utils/logger.h"
 
-OpenSLRender::OpenSLRender() {
-}
+OpenSLRender::OpenSLRender() = default;
 
-OpenSLRender::~OpenSLRender() {
-}
+OpenSLRender::~OpenSLRender() = default;
 
 void OpenSLRender::InitRender() {
     if (!CreateEngine()) return;
@@ -164,7 +162,7 @@ bool OpenSLRender::ConfigPlayer() {
     return true;
 }
 
-bool OpenSLRender::CheckError(SLresult result, std::string hint) {
+bool OpenSLRender::CheckError(SLresult result, const std::string &hint) {
     if (SL_RESULT_SUCCESS != result) {
         LOGE(TAG, "OpenSL ES [%s] init fail", hint.c_str())
         return true;
