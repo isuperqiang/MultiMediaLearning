@@ -1,6 +1,8 @@
-package com.richie.multimedialearning.media;
+package com.richie.multimedialearning.media.decoder;
 
 /**
+ * 解码状态
+ *
  * @author Richie on 2020.12.29
  */
 public enum DecodeState {

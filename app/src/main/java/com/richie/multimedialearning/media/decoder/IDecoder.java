@@ -1,6 +1,8 @@
-package com.richie.multimedialearning.media;
+package com.richie.multimedialearning.media.decoder;
 
 import android.media.MediaFormat;
+
+import com.richie.multimedialearning.media.IDecoderProgressListener;
 
 /**
  * 解码器接口

@@ -1,9 +1,12 @@
-package com.richie.multimedialearning.media;
+package com.richie.multimedialearning.media.decoder;
 
 import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.os.SystemClock;
 import android.util.Log;
+
+import com.richie.multimedialearning.media.IDecoderProgressListener;
+import com.richie.multimedialearning.media.extractor.IExtractor;
 
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -81,8 +84,9 @@ public abstract class BaseDecoder implements IDecoder {
                     if (mSyncRender && mState == DecodeState.DECODING) {
                         sleepRender();
                     }
+                    boolean rendered = false;
                     if (mSyncRender) {
-                        render(mOutputBuffers[index], mBufferInfo);
+                        rendered = render(mOutputBuffers[index], mBufferInfo);
                     }
 //                    if (mDecodeStateListener != null) {
 //                        Frame frame = new Frame();
@@ -90,7 +94,7 @@ public abstract class BaseDecoder implements IDecoder {
 //                        frame.setBufferInfo(mBufferInfo);
 //                        mDecodeStateListener.decoderOneFrame(this, frame);
 //                    }
-                    mMediaCodec.releaseOutputBuffer(index, true);
+                    mMediaCodec.releaseOutputBuffer(index, !rendered);
                     if (mState == DecodeState.START) {
                         mState = DecodeState.PAUSE;
                     }
@@ -136,6 +140,22 @@ public abstract class BaseDecoder implements IDecoder {
         return true;
     }
 
+    private boolean initParams() {
+        Log.d(TAG, "initParams: ");
+        try {
+            MediaFormat format = mExtractor.getFormat();
+            mDuration = format.getLong(MediaFormat.KEY_DURATION) / 1000;
+            if (mEndPos == 0) {
+                mEndPos = mDuration;
+            }
+            initSpecParams(format);
+            return true;
+        } catch (Exception e) {
+            Log.w(TAG, "initParams: ", e);
+            return false;
+        }
+    }
+
     private boolean initCodec() {
         Log.d(TAG, "initCodec: " + getClass().getSimpleName());
         try {
@@ -155,24 +175,11 @@ public abstract class BaseDecoder implements IDecoder {
         }
     }
 
-    private boolean initParams() {
-        Log.d(TAG, "initParams: ");
-        try {
-            MediaFormat format = mExtractor.getFormat();
-            mDuration = format.getLong(MediaFormat.KEY_DURATION) / 1000;
-            if (mEndPos == 0) {
-                mEndPos = mDuration;
-            }
-            initSpecParams(format);
-            return true;
-        } catch (Exception e) {
-            Log.w(TAG, "initParams: ", e);
-            return false;
-        }
-    }
-
     private boolean pushBufferToDecoder() {
         int index = mMediaCodec.dequeueInputBuffer(TIMEOUT_US);
+        if (!mIsRunning) {
+            return false;
+        }
         boolean isEos = false;
         if (index >= 0) {
             ByteBuffer inputBuffer = mInputBuffers[index];
@@ -189,6 +196,9 @@ public abstract class BaseDecoder implements IDecoder {
 
     private int pullBufferFromDecoder() {
         int index = mMediaCodec.dequeueOutputBuffer(mBufferInfo, TIMEOUT_US);
+        if (!mIsRunning) {
+            return -1;
+        }
         switch (index) {
             case MediaCodec.INFO_OUTPUT_BUFFERS_CHANGED: {
                 mOutputBuffers = mMediaCodec.getOutputBuffers();
@@ -234,7 +244,6 @@ public abstract class BaseDecoder implements IDecoder {
         }
         synchronized (mLock) {
             try {
-                Log.w(TAG, "waitDecode: wait" + getClass().getSimpleName());
                 mLock.wait();
             } catch (InterruptedException e) {
                 Log.w(TAG, "waitDecode: ", e);
@@ -395,8 +404,9 @@ public abstract class BaseDecoder implements IDecoder {
      *
      * @param outputBuffer
      * @param bufferInfo
+     * @return
      */
-    protected abstract void render(ByteBuffer outputBuffer, MediaCodec.BufferInfo bufferInfo);
+    protected abstract boolean render(ByteBuffer outputBuffer, MediaCodec.BufferInfo bufferInfo);
 
     /**
      * 解码结束

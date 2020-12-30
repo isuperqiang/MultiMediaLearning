@@ -1,4 +1,6 @@
-package com.richie.multimedialearning.media;
+package com.richie.multimedialearning.media.decoder;
+
+import com.richie.multimedialearning.media.Frame;
 
 /**
  * @author Richie on 2020.12.30

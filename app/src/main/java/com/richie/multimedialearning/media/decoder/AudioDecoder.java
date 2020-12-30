@@ -7,13 +7,14 @@ import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.util.Log;
 
-import com.richie.multimedialearning.media.BaseDecoder;
-import com.richie.multimedialearning.media.IExtractor;
 import com.richie.multimedialearning.media.extractor.AudioExtractor;
+import com.richie.multimedialearning.media.extractor.IExtractor;
 
 import java.nio.ByteBuffer;
 
 /**
+ * 音频解码器
+ *
  * @author Richie on 2020.12.30
  */
 public class AudioDecoder extends BaseDecoder {
@@ -72,7 +73,7 @@ public class AudioDecoder extends BaseDecoder {
     }
 
     @Override
-    protected void render(ByteBuffer outputBuffer, MediaCodec.BufferInfo bufferInfo) {
+    protected boolean render(ByteBuffer outputBuffer, MediaCodec.BufferInfo bufferInfo) {
         int length = bufferInfo.size / 2;
         if (mAudioOutTempBuf.length < length) {
             mAudioOutTempBuf = new short[length];
@@ -80,6 +81,7 @@ public class AudioDecoder extends BaseDecoder {
         outputBuffer.position(0);
         outputBuffer.asShortBuffer().get(mAudioOutTempBuf, 0, length);
         mAudioTrack.write(mAudioOutTempBuf, 0, length);
+        return true;
     }
 
     @Override

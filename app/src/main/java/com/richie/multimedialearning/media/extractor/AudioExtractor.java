@@ -2,8 +2,6 @@ package com.richie.multimedialearning.media.extractor;
 
 import android.media.MediaFormat;
 
-import com.richie.multimedialearning.media.IExtractor;
-
 import java.nio.ByteBuffer;
 
 /**
@@ -13,7 +11,7 @@ import java.nio.ByteBuffer;
  */
 public class AudioExtractor implements IExtractor {
     private static final String TAG = "AudioExtractor";
-    private MMExtractor mMMExtractor;
+    private final MMExtractor mMMExtractor;
 
     public AudioExtractor(String filePath) {
         mMMExtractor = new MMExtractor(filePath);

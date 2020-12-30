@@ -7,13 +7,14 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
-import com.richie.multimedialearning.media.BaseDecoder;
-import com.richie.multimedialearning.media.IExtractor;
+import com.richie.multimedialearning.media.extractor.IExtractor;
 import com.richie.multimedialearning.media.extractor.VideoExtractor;
 
 import java.nio.ByteBuffer;
 
 /**
+ * 视频解码器
+ *
  * @author Richie on 2020.12.30
  */
 public class VideoDecoder extends BaseDecoder {
@@ -21,15 +22,13 @@ public class VideoDecoder extends BaseDecoder {
     private Surface mSurface;
     private SurfaceView mSurfaceView;
 
-    public VideoDecoder(String filePath) {
+    public VideoDecoder(String filePath, SurfaceView surfaceView) {
         super(filePath);
-    }
-
-    public void setSurfaceView(SurfaceView surfaceView) {
         mSurfaceView = surfaceView;
     }
 
-    public void setSurface(Surface surface) {
+    public VideoDecoder(String filePath, Surface surface) {
+        super(filePath);
         mSurface = surface;
     }
 
@@ -61,9 +60,9 @@ public class VideoDecoder extends BaseDecoder {
         if (mSurface != null) {
             mediaCodec.configure(mediaFormat, mSurface, null, 0);
             notifyDecode();
-//        } else if (mSurfaceView.getHolder().getSurface() != null) {
-//            mSurface = mSurfaceView.getHolder().getSurface();
-//            configCodec(mediaCodec, mediaFormat);
+        } else if (mSurfaceView.getHolder().getSurface() != null) {
+            mSurface = mSurfaceView.getHolder().getSurface();
+            configCodec(mediaCodec, mediaFormat);
         } else {
             mSurfaceView.getHolder().addCallback(new SurfaceHolder.Callback() {
                 @Override
@@ -94,8 +93,8 @@ public class VideoDecoder extends BaseDecoder {
     }
 
     @Override
-    protected void render(ByteBuffer outputBuffer, MediaCodec.BufferInfo bufferInfo) {
-
+    protected boolean render(ByteBuffer outputBuffer, MediaCodec.BufferInfo bufferInfo) {
+        return false;
     }
 
     @Override

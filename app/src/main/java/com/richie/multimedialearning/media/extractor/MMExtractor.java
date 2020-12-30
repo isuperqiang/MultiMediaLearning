@@ -14,7 +14,6 @@ import java.nio.ByteBuffer;
  */
 class MMExtractor {
     private static final String TAG = "MMExtractor";
-
     private MediaExtractor mMediaExtractor;
     private int mAudioTrack = -1;
     private int mVideoTrack = -1;
@@ -37,9 +36,8 @@ class MMExtractor {
      * @return
      */
     MediaFormat getVideoFormat() {
-        int trackCount = mMediaExtractor.getTrackCount();
         MediaFormat format = null;
-        for (int i = 0; i < trackCount; i++) {
+        for (int i = 0, trackCount = mMediaExtractor.getTrackCount(); i < trackCount; i++) {
             format = mMediaExtractor.getTrackFormat(i);
             String mime = format.getString(MediaFormat.KEY_MIME);
             if (mime.startsWith("video/")) {
@@ -56,9 +54,8 @@ class MMExtractor {
      * @return
      */
     MediaFormat getAudioFormat() {
-        int trackCount = mMediaExtractor.getTrackCount();
         MediaFormat format = null;
-        for (int i = 0; i < trackCount; i++) {
+        for (int i = 0, trackCount = mMediaExtractor.getTrackCount(); i < trackCount; i++) {
             format = mMediaExtractor.getTrackFormat(i);
             String mime = format.getString(MediaFormat.KEY_MIME);
             if (mime.startsWith("audio/")) {

@@ -54,7 +54,9 @@
             android:theme="@style/Theme.AppCompat.NoActionBar" />
         <activity android:name=".ffmpeg.FFmpegMenuActivity" />
         <activity android:name=".ffmpeg.FFmpegVideoActivity" />
-        <activity android:name=".SimplePlayerActivity" />
+        <activity
+            android:name=".SimplePlayerActivity"
+            android:theme="@style/Theme.AppCompat.NoActionBar" />
     </application>
 
 </manifest>

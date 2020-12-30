@@ -1,4 +1,4 @@
-package com.richie.multimedialearning.media;
+package com.richie.multimedialearning.media.extractor;
 
 import android.media.MediaFormat;
 

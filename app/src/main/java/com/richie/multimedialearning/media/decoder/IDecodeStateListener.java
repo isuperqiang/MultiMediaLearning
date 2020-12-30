@@ -1,4 +1,6 @@
-package com.richie.multimedialearning.media;
+package com.richie.multimedialearning.media.decoder;
+
+import com.richie.multimedialearning.media.Frame;
 
 /**
  * 解码状态回调接口

@@ -5,7 +5,7 @@ import android.media.MediaCodec;
 import java.nio.ByteBuffer;
 
 /**
- * 一帧解码数据
+ * 一帧的解码数据
  *
  * @author Richie on 2020.12.29
  */
