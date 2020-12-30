@@ -16,7 +16,6 @@ import com.richie.multimedialearning.audiorecord.AudioRecordActivity;
 import com.richie.multimedialearning.audiotrack.AudioTrackActivity;
 import com.richie.multimedialearning.camera.CameraPreviewActivity;
 import com.richie.multimedialearning.ffmpeg.FFmpegMenuActivity;
-import com.richie.multimedialearning.mediacodec.CodecActivity;
 import com.richie.multimedialearning.muxerextract.MediaMuxerExtractActivity;
 import com.richie.multimedialearning.opengl.OpenGLActivity;
 import com.richie.multimedialearning.surface.SurfaceActivity;
@@ -91,7 +90,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 intent = new Intent(this, MediaMuxerExtractActivity.class);
                 break;
             case R.id.btn_media_codec:
-                intent = new Intent(this, CodecActivity.class);
+                intent = new Intent(this, SimplePlayerActivity.class);
                 break;
             case R.id.btn_opengles: {
                 String[] types = {"Triangle", "Image"};
